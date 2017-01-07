@@ -1,14 +1,11 @@
 #Author: Kyle Anderson. "RST". Purpose: To make a game where barrels will roll on the ground with 
 #math questions on them that the user must answer the question to be able to jump over the barrel and survive.
-import pygame, time, input, json, tkinter, BarrelGenerator
+import pygame, time, input, json, tkinter, game
 from pygame.locals import * 
 clock = pygame.time.Clock()
 pygame.mixer.pre_init(44100, 16, 2, 4096)
 
-pygame.init()
-screen = pygame.display.set_mode((1200, 800))
-pygame.display.set_caption("User Selection")
-BarrelGenerator.barrelGenerator(screen, 3, 1)
+game.main(1)
 def login(): #Make a function to log in the specific user.
     users = open("userData.json", "r+")
     if users.readline() == "":

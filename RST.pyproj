@@ -6,7 +6,7 @@
     <ProjectGuid>fa14e364-c384-4048-b7ee-648babb75175</ProjectGuid>
     <ProjectHome>
     </ProjectHome>
-    <StartupFile>RST.py</StartupFile>
+    <StartupFile>menu.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -23,14 +23,20 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="BarrelGenerator.py">
+    <Compile Include="game.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="controllerTest.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="input.py" />
+    <Compile Include="menu.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="RST.py" />
+    <Compile Include="tests.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="imperialMarch.wav" />
