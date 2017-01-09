@@ -10,7 +10,7 @@ class Barrel(pygame.sprite.Sprite):
         self.barrels = [] #Variable define: A variable to hold the multiple instances of barrels
         for self.a in range(0, 90, 10): #Loop around opening stuff
             barreltext = "Barrel" + str(self.a) + ".png" #Get the name of the next barrel.
-            self.barrel = pygame.image.load(barreltext)
+            self.barrel = pygame.image.load("Barrels/"+ barreltext)
             self.barrel.convert() #Convert it
             self.barrel.set_colorkey((0, 0, 0)) #Set the background stuff
             self.barrel = pygame.transform.scale(self.barrel, (120, 120))#Scale it proeperly
@@ -52,13 +52,13 @@ class Barrel(pygame.sprite.Sprite):
         self.image.blit(self.displayText, self.textpos)
 
 class Player(pygame.sprite.Sprite): #Make a class for the player
-    def __init__(self):
+    def __init__(self, version):
         super().__init__()
         self.lives = 2 #2 lives before the game ends.
         self.done = False #Used for jumping the character
         #self.image = pygame.Surface((100, 300), pygame.SRCALPHA, 32)
         #self.image = self.image.convert_alpha()
-        self.image = pygame.image.load("elf.png")
+        self.image = pygame.image.load("Elves versions/" + version)
         self.image.convert()
         self.image = pygame.transform.scale(self.image, (150, 150))
         self.rect = self.image.get_rect()
@@ -204,7 +204,7 @@ def main(difficulty, user): #User is the user's information
     backgroundJungle = backgroundJungle.convert()
     screen.blit(backgroundJungle, (0,0))
     succession, score = 20.0, 0  #Variable define: This variable will control the rate at which barrels hurtle at the player. Score is the player's score.
-    barrel, answerBoard, scoreboard, character, menubutton =  Barrel(difficulty), AnswerBoard(screen), scoreDisplay(), Player(), Menu()
+    barrel, answerBoard, scoreboard, character, menubutton =  Barrel(difficulty), AnswerBoard(screen), scoreDisplay(), Player(user['character']), Menu()
     barrels = pygame.sprite.Group(barrel) #Add the text and the barrel to the barrels group
     for barrelMaker in range(0, 5): #Make 5 more barrels so we do not need to make them during the game. Also restricts the game to allow only 6 barrels at a time.
         #newbarrel = copy.deepcopy(barrel) #Copy the last barrel.
@@ -234,6 +234,7 @@ def main(difficulty, user): #User is the user's information
             objects.remove(menubutton)
         elif keyPressed != K_ESCAPE and menu:
             if menubutton.rect.topleft < pygame.mouse.get_pos() < menubutton.rect.bottomright and pygame.mouse.get_pressed() == (True, False, False):
+                pygame.mixer.quit()
                 pygame.quit()
                 return None
             objects.draw(screen)
@@ -252,6 +253,7 @@ def main(difficulty, user): #User is the user's information
             if not jumpStat: 
                 reg = False
         turn += 1
+        furthestRight = 0 #Reset this variable
         clock.tick(60) #Limit to 60 fps
         screen.fill((0, 0, 0))
         screen.blit(backgroundJungle, (0,0))
@@ -261,6 +263,7 @@ def main(difficulty, user): #User is the user's information
             collisionList = pygame.sprite.spritecollide(character, barrels, False, None) #Get a list of the barrels that are colliding with the player.
             for collisionGo in range(0, len(collisionList)):
                 if collisionList[collisionGo].passed != False: #Tell the barrel it has been hit, but only if it doesn't already know this
+                    answerChances = 2 #Reset this variable so the user gets more chances to answer the question.
                     character.lives -= 1 #Subtract from the lives of the player
                     inputted = ""
                     correct = None
@@ -275,6 +278,7 @@ def main(difficulty, user): #User is the user's information
                     object.roll(movement)
                     if character.rect.right < object.rect.left and object.correct and object.passed == None: #This will decide if the player has passed the object.
                         object.passed = True
+                        answerChances = 2 #Reset this variable so the player can answer the questions again in the future.
                         score += 5
                     if object.rect.left >= 1200: 
                         objects.remove(object) #If the barrel runs off screen, remove it from the group of onscreen stuff.
@@ -297,7 +301,7 @@ def main(difficulty, user): #User is the user's information
                 answer = answerList[answerPos]
                 barrelToAnswer = barrelOptions[answerPos] #Need this in case the user get the answer right.
             else: furhtestRight = 0
-        if len(barrelOptions) > 0 and type(keyPressed)== int and (48 <= keyPressed <= 57 or keyPressed == 45): #We make sure that they are only inputting numbers or negative sign "-"
+        if len(barrelOptions) > 0 and type(keyPressed)== int and (48 <= keyPressed <= 57 or keyPressed == 45) and answerChances > 0: #We make sure that they are only inputting numbers or negative sign "-"
             if correct == False:
                 correct = None
                 inputted = ""
@@ -309,8 +313,9 @@ def main(difficulty, user): #User is the user's information
                     barrelToAnswer.correct, correct = True, True #True to be green and to tell the barrel it has been answered.
                     score += 10 #Increase score per question answered correctly
                     jump = True
-                    print("Jump!")
-            else: correct = False
+            else: 
+                correct = False
+                answerChances -= 1 #Subtract from the amount of chances the user gets
         answerBoard.change(screen, correct, inputted) #Update the answering board.
         scoreboard.Update(score)
         objects.update(answerBoard, scoreboard, character)
