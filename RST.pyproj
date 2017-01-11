@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="imperialMarch.wav" />
+    <Content Include="readme.txt" />
     <Content Include="userData.json" />
   </ItemGroup>
   <PropertyGroup>

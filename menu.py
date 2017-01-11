@@ -49,7 +49,7 @@ def login(userNo, data):
     if userNo not in existingUsers:
         infoGather = tkinter.Tk("Create New User", None, "New User")
         okBox = tkinter.Button(infoGather, text = "Ok", command = lambda : dashboard([nameBox.get(), userNo, infoGather], data))
-        cancelBox = tkinter.Button(infoGather, text = "Cancel", command = lambda: mainButtonMaker(infoGather))
+        cancelBox = tkinter.Button(infoGather, text = "Cancel", command = lambda: mainButtonMaker(infoGather, existingUsers))
         nameBox = tkinter.Entry(infoGather, bg = "#000000", fg = "#00FF00")
         label = tkinter.Label(infoGather, text = "Your Name : ")
         label.grid(column = 0, row = 1)

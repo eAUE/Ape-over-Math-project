@@ -1,0 +1,1 @@
+Note: To use this code, you must have Python 3.5.2 installed as well as the module Pygame installed. Easiest way to install pygame is using pip.

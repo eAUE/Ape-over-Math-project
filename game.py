@@ -17,7 +17,7 @@ class Barrel(pygame.sprite.Sprite):
             self.barrels.append(self.barrel)
         self.image = self.barrels[0].copy()
         self.rect = self.image.get_rect() #Get the rectangle.
-        self.rect.move_ip(-90 - self.rect.x, 680) #Move the rectangle to the proper locations.
+        self.rect.bottomright = (0, 800) #Move the rectangle to the proper locations.
         self.instance = 36
         #Text now
         self.font = pygame.font.SysFont("timesnewroman", 17) #Get the font ready
@@ -44,7 +44,7 @@ class Barrel(pygame.sprite.Sprite):
         self.image = self.barrels[0].copy()
         self.correct, self.passed = False, None
         self.instance = 36
-        self.rect.move_ip((90 - self.rect.x), 0)
+        self.rect.bottomright = (0, 800)
         self.text, self.answer = questionAnalyzer(difficulty)
         self.displayText = self.font.render(self.text, 1, (255, 255, 255)) #Render text
         self.textpos = self.displayText.get_rect() #Set up for placing the text in the centre.
@@ -65,7 +65,7 @@ class Player(pygame.sprite.Sprite): #Make a class for the player
         #self.bottom = pygame.draw.rect(self.image, (255, 255, 255), (self.rect.centerx -50, self.rect.h//2 -50, 100, 100))
         #self.body = pygame.draw.circle(self.image, (255, 255, 255), (self.rect.centerx, self.rect.h//6 * 5), 50)
         #self.head = pygame.draw.polygon(self.image, (255, 255, 255), [(self.rect.w//4, 0), (self.rect.w//4 *3, 0), (self.rect.w ,self.rect.h//6), (self.rect.w//4 *3, self.rect.h//3), (self.rect.w//4, self.rect.h//3), (0, self.rect.h//6)])
-        self.rect.move_ip(900, 650)
+        self.rect.bottomright = (1200, 800) #Reposition at 1200, 800
         self.originalRect = self.rect.copy() #Make this for referencing original position.
         self.timeReg, self.initVel = 0, (9.81 * math.sqrt(120/49))/1000 #Used for the jumping later.
     def jump(self):
@@ -92,7 +92,12 @@ class Player(pygame.sprite.Sprite): #Make a class for the player
         elif direction == "l":
             if self.rect.left -7 < minimumPos: self.rect.move_ip(minimumPos - self.rect.left, 0)
             else: self.rect.move_ip(-7, 0)
-#    def deathAnimation(self):
+    def deathAnimation(self, timeSinceDeath):
+        self.deathTime = int(round(time.time()*1000)) - timeSinceDeath #Time in miliseconds to be more precise.
+        self.rect.y = self.originalRect.y - (int(round(-1/2500*(self.deathTime - 1000)**2 + 400)))
+        if 50 < (self.deathTime % 200) <= 199: self.image = pygame.transform.rotozoom(self.image, 90, 1) #Rotate the character.
+        if self.deathTime >= 2500: return True #Stop eventually
+        return False
 
 class AnswerBoard(pygame.sprite.Sprite): #Make a class for the answering board
     def __init__(self, screen):
@@ -151,6 +156,18 @@ class Menu(pygame.sprite.Sprite): #Make a menubutton class
         #self.textPos = self.text.get_rect()
         #self.textPos.center = (self.image.get_rect().centerx, self.image.get_rect().h/3 *2)
         #self.image.blit(self.text, self.textPos)
+class timeDisplay(pygame.sprite.Sprite):
+    def __init__(self, screen):
+        super().__init__()
+        self.startTime = round(time.time()) #Set the start time of the game.
+        self.font = pygame.font.SysFont("timesnewroman", 35)
+        self.image = self.font.render("00:00", 1, (255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.topright = screen.get_rect().topright
+    def Update(self): #Make something to update the time display
+        self.newTime = round(time.time())
+        self.mins, self.secs = (self.newTime - self.startTime)//60, (self.newTime - self.startTime) % 60
+        self.image = self.font.render(str(self.mins) + ":" + str(self.secs), 1, (255, 255, 255))
 
 def box(screen, text, correct, oldTextPos): #Make this function to draw the box for the input.
     if oldTextPos != None: screen.fill((0 ,0 ,0), oldTextPos) #Get rid of what is there
@@ -204,15 +221,15 @@ def main(difficulty, user): #User is the user's information
     backgroundJungle = backgroundJungle.convert()
     screen.blit(backgroundJungle, (0,0))
     succession, score = 20.0, 0  #Variable define: This variable will control the rate at which barrels hurtle at the player. Score is the player's score.
-    barrel, answerBoard, scoreboard, character, menubutton =  Barrel(difficulty), AnswerBoard(screen), scoreDisplay(), Player(user['character']), Menu()
+    barrel, answerBoard, scoreboard, character, menubutton, timedisplay =  Barrel(difficulty), AnswerBoard(screen), scoreDisplay(), Player(user['character']), Menu(), timeDisplay(screen)
     barrels = pygame.sprite.Group(barrel) #Add the text and the barrel to the barrels group
     for barrelMaker in range(0, 5): #Make 5 more barrels so we do not need to make them during the game. Also restricts the game to allow only 6 barrels at a time.
         #newbarrel = copy.deepcopy(barrel) #Copy the last barrel.
         newbarrel = Barrel(difficulty)
         #newbarrel.reset(difficulty)
         barrels.add(newbarrel)
-    objects = pygame.sprite.Group(barrel, answerBoard, scoreboard, character)
-    jump, movement, jumpStat, reg, furthestRight, menu, timepaused, answerChances = False, 1, False, False, 0, False, 0, 2 #Variable define: reg determines if the jumping of the player has been registered already.
+    objects = pygame.sprite.Group(barrel, answerBoard, scoreboard, character, timedisplay)
+    jump, movement, jumpStat, reg, furthestRight, menu, timepaused, answerChances = False, 3, False, False, 0, False, 0, 2 #Variable define: reg determines if the jumping of the player has been registered already.
     inputted = "" #Make a variable for what the user inputs.
     turn = 0 #Variable define: Will be used to determine if we should turn the barrel or not.
     correct = None #Define some variables to be used later.
@@ -257,20 +274,20 @@ def main(difficulty, user): #User is the user's information
         clock.tick(60) #Limit to 60 fps
         screen.fill((0, 0, 0))
         screen.blit(backgroundJungle, (0,0))
-        if turn % 5400 == 0: movement += 1
-        if turn % 2 == 0: #Limit how fast the barrels move.
+        #if turn % 5400 == 0: movement += 1
+        if turn % 4 == 0: #Limit how many times the barrels move.
             posList, answerList, barrelOptions = [], [], []
             collisionList = pygame.sprite.spritecollide(character, barrels, False, None) #Get a list of the barrels that are colliding with the player.
             for collisionGo in range(0, len(collisionList)):
-                if collisionList[collisionGo].passed != False: #Tell the barrel it has been hit, but only if it doesn't already know this
+                if collisionList[collisionGo] in objects: #Only do this for barrels that are actually in the game.
                     answerChances = 2 #Reset this variable so the user gets more chances to answer the question.
                     character.lives -= 1 #Subtract from the lives of the player
                     inputted = ""
                     correct = None
-                    character.hit()
+                    if character.lives > 0: character.hit() #Only do this while no death animation will go
                     objects.remove(collisionList[collisionGo])
                     collisionList[collisionGo].reset(difficulty)
-                    collisionList[collisionGo].passed = False
+                    #collisionList[collisionGo].passed = False
             barrelList = barrels.sprites()
             for barrelRoller in range(0, len(barrelList)): #Loop around the barrels group to make them all roll
                 object = barrelList[barrelRoller]
@@ -293,7 +310,7 @@ def main(difficulty, user): #User is the user's information
                         objects.update(object) #Update the objects class
                 elif time.time() - timeReg >= succession: #If this is true, make another barrel.
                     timeReg = time.time()
-                    succession -= 0.1 #Subtract so that next time the barrel comes a little earlier each time, making it harder every time.
+                    succession -= 0.3 #Subtract so that next time the barrel comes a little earlier each time, making it harder every time.
                     objects.add(object) #Add it to the group of stuff that goes on screen.
             if len(barrelOptions) > 0:
                 if len(posList) > 1: furthestRight = max(posList) + 120 #Prevent the player from going too close to the next barrel.
@@ -318,13 +335,24 @@ def main(difficulty, user): #User is the user's information
                 answerChances -= 1 #Subtract from the amount of chances the user gets
         answerBoard.change(screen, correct, inputted) #Update the answering board.
         scoreboard.Update(score)
-        objects.update(answerBoard, scoreboard, character)
+        timedisplay.Update()
+        objects.update(answerBoard, scoreboard, character, timedisplay)
         objects.draw(screen)
         pygame.display.flip()
     deathSound = pygame.mixer.Sound("deathSound.wav")
     deathSound.set_volume(1.0)
     musicSelection.stop()
     deathSound.play(0)
+    timetoDeath = int(round(time.time()*1000)) #Get the time in miliseconds since beginning of the death
+    done = False
+    while not done:
+        clock.tick(60)
+        done = character.deathAnimation(timetoDeath)
+        objects.update(character)
+        screen.fill((0, 0, 0))
+        screen.blit(backgroundJungle, (0,0))
+        objects.draw(screen)
+        pygame.display.flip()
     objects.add(menubutton)
     while True:
         event = pygame.event.poll()
