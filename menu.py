@@ -1,22 +1,25 @@
 #Author: Kyle Anderson "menu" Purpose: To be the menu portion of my ape over math summative program
-#data = open("userData.json", "w")
-#data.truncate()
-#data.close()
-import tkinter, time, game, json, importlib, pygame, random
+import tkinter, time, game, json, pygame, random, shutil, os
+import tkinter.filedialog as tkFD
 imported = False
 from tkinter import messagebox as tkMessageBox
 class musicer():
     def __init__(self): 
+        pygame.init()
         pygame.mixer.init()
         self.backgroundMusic = pygame.mixer.Channel(0)
-        self.queue, self.count = [], 5
-        self.museSelection = ["dontletmedown.wav", "happy.wav", "magic.wav", "skyfall.wav", "nevergonnagiveyouup.wav"] #Pre set list of music for the lobby
+        self.queue, self.museSelection = [], []
+        self.files = os.listdir("Music/Menu") #Pre set list of music for the lobby
+        for self.adder in range(0, len(self.files)):
+            self.name, self.extension = os.path.splitext(self.files[self.adder])
+            if self.extension ==".wav": self.museSelection.append(self.files[self.adder]) #Only add the file if it is .wav.
+        self.count, self.length = len(self.museSelection), len(self.museSelection) #Need self.count as a counter starting at the total number of files. Self.length will always be that number of files as well.
         for self.museMaker in range(len(self.museSelection)):
             self.num = random.randint(0, len(self.museSelection) - 1) #So that they play in a different order each time.
             self.current= pygame.mixer.Sound("music/Menu/" + str(self.museSelection[self.num]))
             self.queue.append(self.current) #Append the sound to the queue list.
             del self.museSelection[self.num] #Get rid of it so it does not play more than once.
-        self.backgroundMusic.play(self.queue[self.count % 5], 0) #Modulus 5 allows us to get remainders between 0 and 4, which are all numbers on the musicList
+        self.backgroundMusic.play(self.queue[self.count % self.length], 0) #Modulus 5 allows us to get remainders between 0 and 4, which are all numbers on the musicList
     def next(self):
         if pygame.mixer.get_init() == False: pygame.mixer.init()
         if self.backgroundMusic.get_busy() != False: #Only run this if the channel isn't busy.
@@ -25,14 +28,72 @@ class musicer():
         self.count += 1
         self.backgroundMusic.play(self.queue[self.count % 5], 0)
         screen.after(1000, music.next)
+    def stop(self):
+        self.backgroundMusic.stop()
+        screen.after_cancel(0)
+        pygame.mixer.quit()
+        pygame.quit()
+    def importer(self, user, buttonsToErase):
+        for self.hereWeGo in range(len(buttonsToErase)): buttonsToErase[self.hereWeGo].grid_forget() #Erase all of the settings buttons.
+        self.fileLoc = tkFD.askopenfilename(title = "Select Wave Music Files")
+        #self.file = open(self.fileLoc, "r+")
+        self.name, self.extension = os.path.splitext(self.fileLoc)
+        if self.extension != ".wav": 
+            self.label = tkinter.Label(screen, text = "Sorry, not a proper wave file format.")
+            self.label.pack()
+            screen.update()
+            time.sleep(3)#Give the user a chace to read the message.
+            settings(user, [self.label])
+        else:
+            self.gameButton = tkinter.Button(screen, text = "Play Music In Game", command = lambda: sendToGame(user, self.fileLoc, [self.gameButton, self.menuButton]))
+            self.menuButton = tkinter.Button(screen, text = "Play Music At Menu", command = lambda: sendToMenu(user, self.fileLoc, [self.gameButton, self.menuButton]))
+            self.menuButton.pack()
+            self.gameButton.pack()
+            screen.update()
+def sendToGame(user, fileLoc, buttonsToErase): #A function to send the file to the game music location, if the user so desires
+    shutil.copy(fileLoc, "Music/In game/") 
+    directory, fileName = os.path.split(fileLoc)
+    user['gameMusic'].append(fileName)
+    label = tkinter.Label(screen, text = "Success!")
+    label.pack()
+    screen.update()
+    time.sleep(3)
+    buttonsToErase.append(label)
+    settings(user, buttonsToErase)
+def sendToMenu(user, fileLoc, buttonsToErase): #A function to send the music to the menu folder
+    newFileLoc = shutil.copy(fileLoc, "Music/Menu/") #Copy the file to the proper location.
+    fileName = os.path.split(newFileLoc)
+    label = tkinter.Label(screen, text = "Success! It will be in the music mixup!")
+    label.pack()
+    screen.update()
+    time.sleep(3)
+    buttonsToErase.append(label)
+    settings(user, buttonsToErase)
+
+        #self.file.close()
 class charButton():
     def __init__(self, screen, row, column, charNo):
         self.character = user['characters'][charNo]
+        if self.character == user['character']: self.colour = "#00FF00"
+        else: self.colour = "#33ccff"
         self.image = tkinter.PhotoImage(file = "Elves versions/" + self.character)
         self.image = self.image.subsample(5, 5)
-        self.button = tkinter.Button(screen, image = self.image, command = lambda: characterSet(self.character))
+        self.button = tkinter.Button(screen, image = self.image, activebackground = "#00FF00", bg = self.colour)
         self.button.grid(column = column, row = row) #Pack the character onto the screen, with one row of space for the label.
+    def config(self, characterList): #Make this function to configure the button to change the colour
+        self.button.configure(command = lambda: characterSet(self.character, characterList)) 
+class button(): #Use this to keep track of which button's which.
+    def __init__(self, buttonMaker, screen, colour, data):
+        self.userNo = buttonMaker
+        self.data = data
+        self.userSelection = tkinter.Button(screen, text = "User " + str(buttonMaker), bg = colour, width = 10, justify = "center", activebackground = "#CC6600", activeforeground = "#00FF00", command = lambda: login(buttonMaker, data, None))
+        self.userSelection.pack()
+    def configure_Command(self, buttons): #A function to configure what the button does
+        self.userSelection.configure(command = lambda: login(self.userNo, self.data, buttons))
 def mainButtonMaker(infoGather, existingUsers):
+    global music
+    music = musicer() #Get the tracks rolling
+    screen.after(1000, music.next) #Tell tkinter to run this in its mainloop
     data = open("userData.json", "r+")
     if infoGather != None: infoGather.destroy()
     for buttonMaker in range(1, 5): #Loop around making the buttons.
@@ -40,18 +101,15 @@ def mainButtonMaker(infoGather, existingUsers):
         else: colour = "#717D7E"
         Button = button(buttonMaker, screen, colour, data)
         buttons.append(Button)
-class button(): #Use this to keep track of which button's which.
-    def __init__(self, buttonMaker, screen, colour, data):
-        self.userSelection = tkinter.Button(screen, text = "User " + str(buttonMaker), bg = colour, width = 10, justify = "center", activebackground = "#CC6600", command = lambda: login(buttonMaker, data))
-        self.userSelection.pack()
-def login(userNo, data):
+    for loop in range(len(buttons)): buttons[loop].configure_Command(buttons) #Update the command called out by the button
+def login(userNo, data, buttons):
     for a in range(0, len(buttons)): buttons[a].userSelection.pack_forget()
     if userNo not in existingUsers:
         infoGather = tkinter.Tk("Create New User", None, "New User")
         okBox = tkinter.Button(infoGather, text = "Ok", command = lambda : dashboard([nameBox.get(), userNo, infoGather], data))
         cancelBox = tkinter.Button(infoGather, text = "Cancel", command = lambda: mainButtonMaker(infoGather, existingUsers))
         nameBox = tkinter.Entry(infoGather, bg = "#000000", fg = "#00FF00")
-        label = tkinter.Label(infoGather, text = "Your Name : ")
+        label = tkinter.Label(infoGather, text = "Gamertag : ")
         label.grid(column = 0, row = 1)
         nameBox.grid(column = 1, row = 1)
         okBox.grid(column = 2, row = 1)
@@ -88,14 +146,17 @@ def dashboard(userTicket, data): #This is the function to create the user's dash
         for closer2 in range(len(userTicket['buttons'][-1])): userTicket['buttons'][-1][closer2].button.grid_forget() #Get rid of the character buttons too.
     else: user = userTicket
     print(user['difficulty'])
-    playButton = tkinter.Button(screen, text = "Play", command = lambda : playtime(user))
-    settingsButton = tkinter.Button(screen, text = "Settings", command = lambda : settings(user, [playButton, outButton, settingsButton]))
-    outButton = tkinter.Button(screen, text = "Log Out", command = lambda: restart([settingsButton, outButton, playButton], 0))
+    playButton = tkinter.Button(screen, text = "Play", command = lambda : playtime(user), bg = "#2874A6", activebackground = "#00FF00")
+    settingsButton = tkinter.Button(screen, text = "Settings", command = lambda : settings(user, [playButton, outButton, settingsButton]), bg = "#9900cc", activebackground = "#00FF00")
+    outButton = tkinter.Button(screen, text = "Log Out", command = lambda: restart([settingsButton, outButton, playButton], 0), bg = "#ff0000", activebackground = "#00FF00")
     playButton.pack(side = "bottom")
     settingsButton.pack(side = "top")
     outButton.pack(side = "right")
-def characterSet(character): #Simple function that will reset the character of the user.
+def characterSet(character, characters): #Simple function that will reset the character of the user.
     user['character'] = character
+    for a in range(len(characters)):
+        if characters[a].character == user['character']: characters[a].button.configure(bg = "#00FF00")
+        else: characters[a].button.configure(bg = "#66ccff")
 def playtime(user):
     music.backgroundMusic.stop()
     pygame.mixer.quit()
@@ -108,20 +169,26 @@ def playtime(user):
     screen.after(1000, music.next)
 def settings(user, buttonsToErase):
     for eraser in range(len(buttonsToErase)): buttonsToErase[eraser].pack_forget()
-    charList = [] #Empty list that will hold all the character buttons that I must erase.
+    charList, eraseList = [], [] #Empty list that will hold all the character buttons that I must erase.
     row, column = 1, 3 #Set the row and column for the character pictures.
     for charMaker in range(len(user['characters'])):
         charbutton = charButton(screen, row, column, charMaker)
         charList.append(charbutton)
+        eraseList.append(charbutton.button)
         row += 1 #Add to the number of rows we have.
         if (row - 1) %4 == 0: row, column = 1, column + 1 #We want 4 pictures per column
+    for charUpdater in range(len(charList)): #Go through the character buttons adding their commands
+        charList[charUpdater].config(charList)
     oldUser = user.copy() #Make a copy of this now in case the user decides to quit
     elvesLabel = tkinter.Label(screen, text = "Choose your elf...")
     difficultySet = tkinter.IntVar()
-    difSlider = tkinter.Scale(screen, label = "Difficulty", variable = difficultySet, from_ = 1, to = 3)
-    deleteButton = tkinter.Button(screen, text = "Erase User Data", command = lambda: restart([difSlider, KButton, cancelButton, deleteButton], 1))
-    KButton = tkinter.Button(screen, text = "Submit", command = lambda: dashboard({'difficulty': difficultySet.get(), "oldUser": user, 'user': "settings1", "buttons":[difSlider, KButton, cancelButton, deleteButton, elvesLabel, charList]}, data))
-    cancelButton = tkinter.Button(screen, text = "Cancel", command = lambda: dashboard({'oldUser': oldUser, 'buttons':[difSlider, KButton, cancelButton, deleteButton, elvesLabel, charList], "user": "settings2"}, data))
+    difSlider = tkinter.Scale(screen, label = "Difficulty", variable = difficultySet, from_ = 1, to = 4)
+    deleteButton = tkinter.Button(screen, text = "Erase User Data", command = lambda: restart(eraseList, 1))
+    KButton = tkinter.Button(screen, text = "Submit", command = lambda: dashboard({'difficulty': difficultySet.get(), "oldUser": user, 'user': "settings1", "buttons":[difSlider, KButton, cancelButton, deleteButton, elvesLabel,museImportButton,  charList]}, data))
+    cancelButton = tkinter.Button(screen, text = "Cancel", command = lambda: dashboard({'oldUser': oldUser, 'buttons':[difSlider, KButton, cancelButton, deleteButton, elvesLabel, museImportButton, charList], "user": "settings2"}, data))
+    museImportButton = tkinter.Button(screen, text = "Import Music", command = lambda: music.importer(user, eraseList))
+    eraseList.extend([KButton, cancelButton, deleteButton, difSlider, museImportButton, elvesLabel])
+    museImportButton.grid(column = 6, row = 0)
     elvesLabel.grid(column = 3, row = 0)
     cancelButton.grid(column = 0, row = 5)
     difSlider.grid(column = 0, row = 0, rowspan = 4)
@@ -129,7 +196,7 @@ def settings(user, buttonsToErase):
     deleteButton.grid(column = 1, row = 0)
     
 def quit(): #Function used to quit
-    music.backgroundMusic.stop()
+    music.stop()
     data = open("userData.json", "r+")
     data.seek(0)
     old = data.readlines()
@@ -143,7 +210,7 @@ def quit(): #Function used to quit
     data.close()
     screen.destroy()
 def restart(buttonsToErase, function):
-    music.backgroundMusic.stop()
+    music.stop()
     data = open("userData.json", "r+")
     for eraser in range(len(buttonsToErase)): #Sometimes (if the user is coming from the dashboard) a pack will be used, other times (the settings) a grid is used.
         if function == 0: 
@@ -162,10 +229,10 @@ def restart(buttonsToErase, function):
             del old[a]
             userLoc = existingUsers.index(readyToWrite['user'])
             del existingUsers[userLoc]
-        elif readyToWrite != None and json.loads(old[a].replace("\n", ""))['user'] == readyToWrite['user']: 
+        elif readyToWrite != None and json.loads(old[a].replace("\n", ""))['user'] == readyToWrite['user']:
             old[a] = json.dumps(readyToWrite) + "\n"
             data.write(old[a])
-    pygame.mixer.quit() #Quit the mixer to allow it to initialize again properly.
+    #os.execve("restart.py",'')
     mainButtonMaker(None, existingUsers)
 screen = tkinter.Tk("Welcome - User Selection", None, "User Selection")
 data = open("userData.json", "r+")
@@ -175,8 +242,6 @@ while readline != "":
     existingUsers.append(readline['user'])
     readline = data.readline()
 data.close()
-music = musicer() #Get the tracks rolling
 mainButtonMaker(None, existingUsers)
-screen.after(1000, music.next) #Tell tkinter to run this in its mainloop
 screen.protocol("WM_DELETE_WINDOW", quit)
-screen.mainloop() 
+screen.mainloop()  
