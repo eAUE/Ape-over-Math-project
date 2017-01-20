@@ -1,8 +1,11 @@
 #Author: Kyle Anderson "menu" Purpose: To be the menu portion of my ape over math summative program
 import tkinter, time, game, json, pygame, random, shutil, os
 import tkinter.filedialog as tkFD
+import tkinter.ttk as ttk
+import tkinter.font as tkFont
+import tkinter.messagebox as MessageBox
+import tkinter.scrolledtext as ScrolledText
 imported = False
-from tkinter import messagebox as tkMessageBox
 class musicer():
     def __init__(self): 
         pygame.init()
@@ -21,227 +24,313 @@ class musicer():
             del self.museSelection[self.num] #Get rid of it so it does not play more than once.
         self.backgroundMusic.play(self.queue[self.count % self.length], 0) #Modulus 5 allows us to get remainders between 0 and 4, which are all numbers on the musicList
     def next(self):
-        if pygame.mixer.get_init() == False: pygame.mixer.init()
+        #if pygame.mixer.get_init() == False: pygame.mixer.init()
         if self.backgroundMusic.get_busy() != False: #Only run this if the channel isn't busy.
-            screen.after(1000, music.next)
             return
         self.count += 1
         self.backgroundMusic.play(self.queue[self.count % 5], 0)
-        screen.after(1000, music.next)
-    def stop(self):
-        self.backgroundMusic.stop()
+    def stop(self, screen):
         screen.after_cancel(0)
+        self.backgroundMusic.stop()
         pygame.mixer.quit()
         pygame.quit()
-    def importer(self, user, buttonsToErase):
-        for self.hereWeGo in range(len(buttonsToErase)): buttonsToErase[self.hereWeGo].grid_forget() #Erase all of the settings buttons.
-        self.fileLoc = tkFD.askopenfilename(title = "Select Wave Music Files")
-        #self.file = open(self.fileLoc, "r+")
-        self.name, self.extension = os.path.splitext(self.fileLoc)
-        if self.extension != ".wav": 
-            self.label = tkinter.Label(screen, text = "Sorry, not a proper wave file format.")
-            self.label.pack()
-            screen.update()
-            time.sleep(3)#Give the user a chace to read the message.
-            settings(user, [self.label])
-        else:
-            self.gameButton = tkinter.Button(screen, text = "Play Music In Game", command = lambda: sendToGame(user, self.fileLoc, [self.gameButton, self.menuButton]))
-            self.menuButton = tkinter.Button(screen, text = "Play Music At Menu", command = lambda: sendToMenu(user, self.fileLoc, [self.gameButton, self.menuButton]))
-            self.menuButton.pack()
-            self.gameButton.pack()
-            screen.update()
-def sendToGame(user, fileLoc, buttonsToErase): #A function to send the file to the game music location, if the user so desires
-    shutil.copy(fileLoc, "Music/In game/") 
-    directory, fileName = os.path.split(fileLoc)
-    user['gameMusic'].append(fileName)
-    label = tkinter.Label(screen, text = "Success!")
-    label.pack()
-    screen.update()
-    time.sleep(3)
-    buttonsToErase.append(label)
-    settings(user, buttonsToErase)
-def sendToMenu(user, fileLoc, buttonsToErase): #A function to send the music to the menu folder
-    newFileLoc = shutil.copy(fileLoc, "Music/Menu/") #Copy the file to the proper location.
-    fileName = os.path.split(newFileLoc)
-    label = tkinter.Label(screen, text = "Success! It will be in the music mixup!")
-    label.pack()
-    screen.update()
-    time.sleep(3)
-    buttonsToErase.append(label)
-    settings(user, buttonsToErase)
 
-        #self.file.close()
 class charButton():
-    def __init__(self, screen, row, column, charNo):
+    def __init__(self, screen, column, row, charNo, user):
         self.character = user['characters'][charNo]
         if self.character == user['character']: self.colour = "#00FF00"
         else: self.colour = "#33ccff"
         self.image = tkinter.PhotoImage(file = "Elves versions/" + self.character)
         self.image = self.image.subsample(5, 5)
-        self.button = tkinter.Button(screen, image = self.image, activebackground = "#00FF00", bg = self.colour)
+        self.button = tkinter.Button(screen, image = self.image, activebackground = "#00FF00", bg = self.colour, command = lambda: Main.characterSet(self.character))
         self.button.grid(column = column, row = row) #Pack the character onto the screen, with one row of space for the label.
-    def config(self, characterList): #Make this function to configure the button to change the colour
-        self.button.configure(command = lambda: characterSet(self.character, characterList)) 
 class button(): #Use this to keep track of which button's which.
-    def __init__(self, buttonMaker, screen, colour, data):
+    def __init__(self, buttonMaker, frame, colour, command, column, row, theFont, text = None):
         self.userNo = buttonMaker
-        self.data = data
-        self.userSelection = tkinter.Button(screen, text = "User " + str(buttonMaker), bg = colour, width = 10, justify = "center", activebackground = "#CC6600", activeforeground = "#00FF00", command = lambda: login(buttonMaker, data, None))
-        self.userSelection.pack()
-    def configure_Command(self, buttons): #A function to configure what the button does
-        self.userSelection.configure(command = lambda: login(self.userNo, self.data, buttons))
-def mainButtonMaker(infoGather, existingUsers):
-    global music
-    music = musicer() #Get the tracks rolling
-    screen.after(1000, music.next) #Tell tkinter to run this in its mainloop
-    data = open("userData.json", "r+")
-    if infoGather != None: infoGather.destroy()
-    for buttonMaker in range(1, 5): #Loop around making the buttons.
-        if buttonMaker in existingUsers: colour = "#00FF00"
-        else: colour = "#717D7E"
-        Button = button(buttonMaker, screen, colour, data)
-        buttons.append(Button)
-    for loop in range(len(buttons)): buttons[loop].configure_Command(buttons) #Update the command called out by the button
-def login(userNo, data, buttons):
-    for a in range(0, len(buttons)): buttons[a].userSelection.pack_forget()
-    if userNo not in existingUsers:
-        infoGather = tkinter.Tk("Create New User", None, "New User")
-        okBox = tkinter.Button(infoGather, text = "Ok", command = lambda : dashboard([nameBox.get(), userNo, infoGather], data))
-        cancelBox = tkinter.Button(infoGather, text = "Cancel", command = lambda: mainButtonMaker(infoGather, existingUsers))
-        nameBox = tkinter.Entry(infoGather, bg = "#000000", fg = "#00FF00")
-        label = tkinter.Label(infoGather, text = "Gamertag : ")
-        label.grid(column = 0, row = 1)
-        nameBox.grid(column = 1, row = 1)
-        okBox.grid(column = 2, row = 1)
-        cancelBox.grid(column = 2, row = 2)
-        #okBox.pack(side = "bottom")
-        #cancelBox.pack(side = "bottom")
-        infoGather.mainloop()
-    else: 
-        data.seek(0)
-        found = False
-        readline = data.readline()
-        while readline != "":
-            readline = json.loads(readline)
-            if readline['user'] == userNo:
-                dashboard(readline, data)
-                break
-            else: readline = data.readline()
-def dashboard(userTicket, data): #This is the function to create the user's dashboard. Will also be responsible for actually creating the user information.
-    global user
-    if type(userTicket) != dict: #It will only not be a dictionary if the user is signing up for the first time
-        userTicket[2].destroy()
-        user = {'name': userTicket[0], 'user':userTicket[1], 'score': [], 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
-        data.seek(0)
-        data.readlines()
-        data.write(json.dumps(user) + "\n")
-        data.close()
-    elif type(userTicket) == dict and userTicket['user'] == "settings1": #This will happen after the user changes their settings
-        user = userTicket['oldUser']
-        for closer in range(len(userTicket['buttons']) -1): userTicket['buttons'][closer].grid_forget() #Get rid of all of this stuff.
-        for closer2 in range(len(userTicket['buttons'][-1])): userTicket['buttons'][-1][closer2].button.grid_forget() #Get rid of the character buttons too.
-        user['difficulty'] = userTicket['difficulty']
-    elif type(userTicket) == dict and userTicket['user'] == "settings2": #This will happen after the user goes to the settings page and presses cancel.
-        for closer in range(len(userTicket['buttons']) -1): userTicket['buttons'][closer].grid_forget() #Get rid of all of this stuff.
-        for closer2 in range(len(userTicket['buttons'][-1])): userTicket['buttons'][-1][closer2].button.grid_forget() #Get rid of the character buttons too.
-    else: user = userTicket
-    print(user['difficulty'])
-    playButton = tkinter.Button(screen, text = "Play", command = lambda : playtime(user), bg = "#2874A6", activebackground = "#00FF00")
-    settingsButton = tkinter.Button(screen, text = "Settings", command = lambda : settings(user, [playButton, outButton, settingsButton]), bg = "#9900cc", activebackground = "#00FF00")
-    outButton = tkinter.Button(screen, text = "Log Out", command = lambda: restart([settingsButton, outButton, playButton], 0), bg = "#ff0000", activebackground = "#00FF00")
-    playButton.pack(side = "bottom")
-    settingsButton.pack(side = "top")
-    outButton.pack(side = "right")
-def characterSet(character, characters): #Simple function that will reset the character of the user.
-    user['character'] = character
-    for a in range(len(characters)):
-        if characters[a].character == user['character']: characters[a].button.configure(bg = "#00FF00")
-        else: characters[a].button.configure(bg = "#66ccff")
-def playtime(user):
-    music.backgroundMusic.stop()
-    pygame.mixer.quit()
-    screen.withdraw()
-    #pygame.mixer.quit()
-    score = game.main(user['difficulty'], user)
-    user['score'].append({'timeStamp': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': user['difficulty'], 'score': score}) #Add the score to the user's score record.
-    screen.deiconify()
-    music.__init__() #Restart the music
-    screen.after(1000, music.next)
-def settings(user, buttonsToErase):
-    for eraser in range(len(buttonsToErase)): buttonsToErase[eraser].pack_forget()
-    charList, eraseList = [], [] #Empty list that will hold all the character buttons that I must erase.
-    row, column = 1, 3 #Set the row and column for the character pictures.
-    for charMaker in range(len(user['characters'])):
-        charbutton = charButton(screen, row, column, charMaker)
-        charList.append(charbutton)
-        eraseList.append(charbutton.button)
-        row += 1 #Add to the number of rows we have.
-        if (row - 1) %4 == 0: row, column = 1, column + 1 #We want 4 pictures per column
-    for charUpdater in range(len(charList)): #Go through the character buttons adding their commands
-        charList[charUpdater].config(charList)
-    oldUser = user.copy() #Make a copy of this now in case the user decides to quit
-    elvesLabel = tkinter.Label(screen, text = "Choose your elf...")
-    difficultySet = tkinter.IntVar()
-    difSlider = tkinter.Scale(screen, label = "Difficulty", variable = difficultySet, from_ = 1, to = 4)
-    deleteButton = tkinter.Button(screen, text = "Erase User Data", command = lambda: restart(eraseList, 1))
-    KButton = tkinter.Button(screen, text = "Submit", command = lambda: dashboard({'difficulty': difficultySet.get(), "oldUser": user, 'user': "settings1", "buttons":[difSlider, KButton, cancelButton, deleteButton, elvesLabel,museImportButton,  charList]}, data))
-    cancelButton = tkinter.Button(screen, text = "Cancel", command = lambda: dashboard({'oldUser': oldUser, 'buttons':[difSlider, KButton, cancelButton, deleteButton, elvesLabel, museImportButton, charList], "user": "settings2"}, data))
-    museImportButton = tkinter.Button(screen, text = "Import Music", command = lambda: music.importer(user, eraseList))
-    eraseList.extend([KButton, cancelButton, deleteButton, difSlider, museImportButton, elvesLabel])
-    museImportButton.grid(column = 6, row = 0)
-    elvesLabel.grid(column = 3, row = 0)
-    cancelButton.grid(column = 0, row = 5)
-    difSlider.grid(column = 0, row = 0, rowspan = 4)
-    KButton.grid(column = 1, row = 5)
-    deleteButton.grid(column = 1, row = 0)
-    
-def quit(): #Function used to quit
-    music.stop()
-    data = open("userData.json", "r+")
-    data.seek(0)
-    old = data.readlines()
-    data.seek(0)
-    data.truncate()
-    try: readyToWrite = user
-    except NameError: readyToWrite = None
-    for a in range (len(old)):
-        if readyToWrite != None and json.loads(old[a].replace("\n", ""))['user'] == readyToWrite['user']: old[a] = json.dumps(readyToWrite) + "\n"
-        data.write(old[a])
-    data.close()
-    screen.destroy()
-def restart(buttonsToErase, function):
-    music.stop()
-    data = open("userData.json", "r+")
-    for eraser in range(len(buttonsToErase)): #Sometimes (if the user is coming from the dashboard) a pack will be used, other times (the settings) a grid is used.
-        if function == 0: 
-            buttonsToErase[eraser].pack_forget()
-        else:
-            buttonsToErase[eraser].grid_forget()
-    if user['user'] not in existingUsers: existingUsers.append(user['user'])
-    data.seek(0)
-    old = data.readlines()
-    data.seek(0)
-    data.truncate()
-    try: readyToWrite = user
-    except NameError: readyToWrite = None
-    for a in range (len(old)):
-        if readyToWrite != None and json.loads(old[a].replace("\n", ""))['user'] == readyToWrite['user'] and function == 1: 
-            del old[a]
-            userLoc = existingUsers.index(readyToWrite['user'])
-            del existingUsers[userLoc]
-        elif readyToWrite != None and json.loads(old[a].replace("\n", ""))['user'] == readyToWrite['user']:
-            old[a] = json.dumps(readyToWrite) + "\n"
-            data.write(old[a])
-    #os.execve("restart.py",'')
-    mainButtonMaker(None, existingUsers)
-screen = tkinter.Tk("Welcome - User Selection", None, "User Selection")
+        if command == "register":
+            self.userSelection = tkinter.Button(frame, text = text + str(buttonMaker), bg = colour, width = 7, height = 1, justify = "center", activebackground = "#CC6600", 
+                                                activeforeground = "#00FF00", command = lambda: Main.register(buttonMaker), font = theFont)
+        else: self.userSelection = tkinter.Button(frame, text = text, width = 7, height = 1, activebackground = "#CC6600", activeforeground = "#00FF00", 
+                                                command = lambda: Main.goToD(buttonMaker), bg = colour, font = theFont)
+        self.userSelection.grid(column = column, row = row, pady = 50, padx = 5)
+    def configure(self, colour, command): #A function to configure what the button does
+        if command == None: self.userSelection.configure(command = command, bg = colour)
+        elif command == "register": self.userSelection.configure(command = lambda: Main.register(self.userNo), bg = colour)
+        else: self.userSelection.configure(command = lambda: Main.goToD(self.userNo), bg = colour)
+class main():
+    def __init__(self, screen):
+        self.usernames = [] #Used to hold the usernames that exist later on.
+        self.dashboardBool = False
+        self.font = tkFont.Font(family = "timesnewroman", size = 100)
+        self.screen = screen
+        self.bgImage = tkinter.PhotoImage(file = "jungleHD.png")
+        self.bg = tkinter.Label(self.screen, image = self.bgImage)
+        self.bg.place(x = 0, y = 0, relwidth = 1, relheight = 1)
+        self.data = open("userData.json", "r+")
+        self.state = "Initializing" #The state variable will operate the state of the person throughout the menu navigation
+        self.readline, self.existingUsers, self.buttons, self.characterImgs = self.data.readline(), [], [], [] #buttons will be used to get all of the user buttons offscreen.
+        while self.readline != "":
+            self.readline = json.loads(self.readline)
+            self.existingUsers.append(self.readline['user'])
+            self.usernames.append(self.readline['gamertag'])
+            self.readline = self.data.readline()
+        self.music = musicer() #Get the tracks rolling
+        #screen.after(1000, self.music.next) #Tell tkinter to run this in its mainloop
+        self.organiser = ttk.Notebook(self.screen)
+        self.userSelection = tkinter.Frame(self.organiser)
+        self.Settings, self.Dashboard, self.HelpAbout, self.Scores = tkinter.Frame(self.organiser), tkinter.Frame(self.organiser), tkinter.Frame(self.organiser), tkinter.Frame(self.organiser)
+        self.userSelect()
+    def mainloop(self):
+        self.music.next()
+        if self.state != "exit": #Loop around until we need to exit
+            #   State index:
+            #   "Initializing": The program is initializing (note: no procedure for this one)
+            #   "Waiting For User Selection": Waiting for the user to select which user they would like to proceed as
+            #   "Transfer to Main Functions": Got past the main log in screen and will go to the main part of the menu
+            #   "Idle": The user is on the dashboard, browsing around buttons.
+            #   "Music Import": The user is importing their own music into the game.
+            #   "play": The user is preparing to play the game.
+            #   "restart": The user just logged in again
+            #   "exit": exiting the program.
+
+            if self.state == "Transfer to Main Functions": 
+                self.dashboard()
+                self.userSelectUpdate()
+                self.scoreWriter()
+            elif self.state == "restart":
+                self.userSelectUpdate()
+                self.organiser.select(1)
+                self.characterSet(self.user['character']) #Reset the user's character colours
+                self.state = "Idle"
+            elif self.state == "quit": self.quit()
+            elif self.state == "play":
+                self.screen.withdraw()
+                self.music.stop(self.screen)
+                self.score = game.main(self.user['difficulty'], self.user)
+                self.user['score'].append({'timeStamp': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 
+                              self.user['difficulty'], 'score': self.score}) #Add the score to the user's score record.
+                self.state = "idle"
+                self.music.__init__()
+                self.screen.deiconify()
+            elif self.state == "erase":
+                self.userSelectUpdate()
+        self.screen.after(50, self.mainloop)
+    def userSelect(self): #Make a function for the user to select their user.
+        self.row, self.column = 0, 0
+        for self.buttonMaker in range(1, 5): #Loop around making the buttons.
+            if self.buttonMaker == 2: self.column = 1
+            elif self.buttonMaker == 3: self.column, self.row = 0, 1
+            elif self.buttonMaker == 4: self.column, self.row = 1, 1
+            if self.buttonMaker in self.existingUsers: #If the user already exists
+                self.colour = "#00FF00"
+                self.text = self.usernames[self.existingUsers.index(self.existingUsers[self.buttonMaker -1 ])] #Get the user's name
+                self.command = "exists"
+                self.Button = button(self.buttonMaker, self.userSelection, self.colour, self.command, self.column, self.row, self.font, self.text)
+            else: #If the user does not already exist
+                self.colour = "#717D7E"
+                self.command = "register"
+                self.Button = button(self.buttonMaker, self.userSelection, self.colour, self.command, self.column, self.row, self.font)
+            self.buttons.append(self.Button)
+        self.organiser.add(self.userSelection)
+        self.organiser.tab(0, text = "User Selection")
+        self.organiser.pack()
+        self.state = "Waiting For User Selection"
+        return
+    def goToD(self, userNo, infoGather = None): #Function will prepare for going to the dashboard
+        if infoGather != None:
+            self.nameBox.get()
+            self.user = {'gamertag': self.nameBox.get(), 'user':userNo, 'score': [], 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
+            infoGather.destroy()
+            self.data.seek(0)
+            self.data.readlines()
+            self.data.write(json.dumps(self.user) + "\n")
+            self.data.flush()
+            self.existingUsers.append(userNo)
+        else: 
+            self.data.seek(0)
+            self.readline = self.data.readline()
+            while self.readline != "":
+                self.readline = json.loads(self.readline)
+                if self.readline['user'] == userNo:
+                    self.user = self.readline
+                    break
+                else: self.readline = self.data.readline()
+        if self.dashboardBool != True: 
+            self.state = "Transfer to Main Functions"
+            self.dashboardBool = True #We only want to make the dashboard once
+        else: self.state = "restart"
+    def userSelectUpdate(self):
+        for self.updater in range(len(self.buttons)):
+            if self.updater + 1 == self.user['user']: 
+                self.colour = "#3399ff"
+                self.command = None
+            elif self.updater + 1 in self.existingUsers: 
+                self.colour = "#00FF00"
+                self.command = "exists"
+            else:
+                self.colour = "#717D7E"
+                self.command = "register"
+            self.buttons[self.updater].configure(self.colour, self.command)
+    def museImporter(self, id): #id will decide where to add the music
+        self.fileLoc = tkFD.askopenfilename(title = "Select Wave Music Files")
+        self.name, self.extension = os.path.splitext(self.fileLoc)
+        if self.extension != ".wav": 
+             MessageBox.showerror("Invalid", "The filetype is invalid. Must be of \".wav\" format.") #Warn the user of what they did.
+        elif id == 1: self.museToGame(self.fileLoc) #Send off to the menu music
+        elif id == 2: self.museToMenu(self.fileLoc) #Send off to the game music
+    def museToGame(self, fileLoc): #A function to send the file to the game music location, if the user so desires
+        shutil.copy(fileLoc, "Music/In game/") 
+        self.directory, self.fileName = os.path.split(fileLoc)
+        self.user['gameMusic'].append(self.fileName)
+        MessageBox.showinfo("Success!", "Success! The music will be in your game music lineup.")
+    def museToMenu(self, fileLoc): #A function to send the music to the menu folder
+        self.newFileLoc = shutil.copy(fileLoc, "Music/Menu/") #Copy the file to the proper location.
+        self.fileName = os.path.split(self.newFileLoc)
+        MessageBox.showinfo("Success!", "Success! The music will be in your menu music lineup.")
+    def register(self, userNo):
+        if userNo not in self.existingUsers:
+            self.infoGather = tkinter.Tk("Create New User", None, "New User")
+            self.okBox = tkinter.Button(self.infoGather, text = "Ok", command = lambda : self.goToD(userNo, self.infoGather))
+            self.cancelBox = tkinter.Button(self.infoGather, text = "Cancel", command = lambda: self.revert_settings(self.infoGather, self.existingUsers))
+            self.nameBox = tkinter.Entry(self.infoGather, bg = "#000000", fg = "#00FF00")
+            self.label = tkinter.Label(self.infoGather, text = "Gamertag : ")
+            self.label.grid(column = 0, row = 1)
+            self.nameBox.grid(column = 1, row = 1)
+            self.okBox.grid(column = 2, row = 1)
+            self.cancelBox.grid(column = 2, row = 2)
+            self.state = "User Creation"
+            self.infoGather.mainloop()
+    def settingUpdate(self, newUser, type = 0): #Type 1 for when you are reverting to the old user.
+        if type == 1: #The cancel button was pressed
+            self.user = newUser
+            self.oldUser = self.user.copy()
+            self.characterSet(self.oldUser['character']) #In case they set their character
+        elif type == 0:
+            self.user['difficulty'] = newUser
+            self.data.seek(0)
+            self.readline, self.backon = self.data.readline(), []
+            while self.readline != "":
+                self.readline = json.loads(self.readline)
+                if self.readline['user'] == self.user['user']: self.readline = self.user
+                self.backon.append(json.dumps(self.readline) + "\n")
+                self.readline = self.data.readline()
+            self.data.seek(0)
+            self.data.truncate()
+            for self.reWrite in range(len(self.backon)):
+                self.data.write(self.backon[self.reWrite])
+            self.data.flush()
+            self.oldUser = self.user.copy() #New copy of the old user because of the submitted changes.
+    def erase(self): #Function to erase the user's data
+        self.state = "erase"
+        self.data.seek(0)
+        self.users = self.data.readlines()
+        self.data.seek(0)
+        self.data.truncate()
+        for self.userReader in range(len(self.users)): #Loop around deleting the right user
+            if json.loads(self.users[self.userReader].replace("\n", ""))['user'] == self.user['user']: del self.users['self.userReader']
+            else: self.data.write(self.users[self.userReader])
+    def dashboard(self): #This is the function to create the user's dashboard. Will also be responsible for actually creating the user information.
+        self.state = "Idle"
+        print(self.user['difficulty'])
+
+        #Home Tab Buttons
+        self.playButton = tkinter.Button(self.Dashboard, text = "Play", command = self.playtime, bg = "#2874A6", activebackground = "#00FF00", font = self.font)
+        #self.outButton = tkinter.Button(self.Dashboard, font = self.font, text = "Log Out", command = lambda: restart([settingsButton, outButton, playButton], 0), bg = "#ff0000", activebackground = "#00FF00")
+        #self.outButton.place(relx = 0.1, rely = 0.1)
+        self.playButton.place(relx = 0.35, rely = 0.25)
+        self.organiser.add(self.Dashboard)
+        self.organiser.tab(1, text = "Home")
+        self.organiser.select(1)
+
+        #Settings Buttons
+        self.charButtons, self.characters = [], [] #This will hold all of the character buttons that there are. The other one will have the actual character names
+        self.difficultySet = tkinter.IntVar()
+        self.oldUser = self.user.copy() #Make a backup copy of the user in case they want to cancel
+        self.characterSpace = tkinter.Frame(self.Settings) #Make a seperate frame for the character icons
+        self.column, self.row = -1, -1
+        for self.charMaker in range(len(self.user['characters'])): #Make the character buttons
+            self.row += 1
+            if self.row % 4 == 0: self.column += 1
+            self.charButtons.append(charButton(self.characterSpace, self.column, self.row % 4,self.charMaker, self.user))
+            self.characters.append(self.user['characters'][self.charMaker])
+        self.elvesLabel = tkinter.Label(self.Settings, text = "Choose Your Elf")
+        self.difSlider = tkinter.Scale(self.Settings, label = "Difficulty", variable = self.difficultySet, from_ = 1, to = 4)
+        self.deleteButton = tkinter.Button(self.Settings, text = "Erase User Data", command = self.erase)
+        self.KButton = tkinter.Button(self.Settings, text = "Save", command = lambda: self.settingUpdate(self.difficultySet.get()))
+        self.cancelButton = tkinter.Button(self.Settings, text = "Discard", command = lambda: self.settingUpdate(self.oldUser, 1))
+
+        self.importMenu = tkinter.Menubutton(self.Settings, text = "Import...", relief = tkinter.RAISED)
+        self.importMenu.menu = tkinter.Menu(self.importMenu)
+        self.importMenu['menu'] = self.importMenu.menu
+        self.importMenu.menu.add_command(label = "Import Game Music", command = lambda: self.museImporter(2))
+        self.importMenu.menu.add_command(label = "Import Menu Music", command = lambda: self.museImporter(1))
+
+        self.importMenu.grid(column = 1, row = 1)
+        self.characterSpace.grid(column = 3, row = 1, rowspan = 4, columnspan = 8)
+        self.elvesLabel.grid(column = 3, row = 0)
+        self.cancelButton.grid(column = 0, row = 5)
+        self.difSlider.grid(column = 0, row = 0, rowspan = 4)
+        self.KButton.grid(column = 1, row = 5)
+        self.deleteButton.grid(column = 1, row = 0)
+
+        self.organiser.add(self.Settings)
+        self.organiser.tab(2, text = "Settings")
+    def playtime(self):
+        self.state = "play"
+        
+        self.screen.deiconify()
+        self.music.__init__() #Resume the music
+    def scoreWriter(self, option = 0): #Option 0 means that the buttons do need to be generated.
+        if option == 0:
+            #self.scroller = tkinter.Scrollbar(self.Scores)
+            #self.scroller.place(x = 1115, y = 0, relheight = 1.0)
+            self.organiser.add(self.Scores)
+            self.organiser.tab(3, text = "View Your Scores")
+            self.scoreFont = tkFont.Font(family = "terminal", size = 25)
+        elif option == 1: self.scoreList.destroy()
+        self.scoreList = ScrolledText.ScrolledText(self.Scores, spacing1 = 10, font = self.scoreFont)
+        for self.scorewriter in range(len(self.user['score'])):           
+            ##Make tags to be able to edit these later
+            #self.timeStamptag = self.scoreList.tag_add("timeStamp", ("%d.%d" % (self.scorewriter, 0)), ("%d.%d" % (self.scorewriter, 1)))
+            #self.difficultytag = self.scoreList.tag_add("timeStamp", ("%d.%d" % (self.scorewriter, 1)), ("%d.%d" % (self.scorewriter, 2)))
+            #self.scoretag = self.scoreList.tag_add("timeStamp", ("%d.%d" % (self.scorewriter, 2)), ("%d.%d" % (self.scorewriter, 3)))
+
+            #Put the text on
+            self.scoreList.insert("timeStamp", ("%d.%d" % (self.scorewriter, 2)) ,str(self.user['score'][self.scorewriter]['score']))
+            self.scoreList.insert("timeStamp", ("%d.%d" % (self.scorewriter, 1)), str(self.user['score'][self.scorewriter]['difficulty']))
+            self.scoreList.insert("timeStamp", ("%d.%d" % (self.scorewriter, 0)) , self.user['score'][self.scorewriter]['timeStamp'])
+        self.scoreList.pack()
+        self.scoreList.config(state = tkinter.DISABLED)
+    def quitCall(self): 
+        self.state = "quit" #Make a function that will just tell the program to quit
+    def quit(self): #Function used to quit
+        self.data.seek(0)
+        self.old = self.data.readlines()
+        self.data.seek(0)
+        self.data.truncate()
+        try: self.readyToWrite = self.user
+        except AttributeError: self.readyToWrite = None
+        for self.a in range (len(self.old)):
+            if self.readyToWrite != None and json.loads(self.old[self.a].replace("\n", ""))['user'] == self.readyToWrite['user']: 
+                self.old[self.a] = json.dumps(self.readyToWrite) + "\n"
+            self.data.write(self.old[self.a])
+        self.data.close()
+        self.music.stop(self.screen)
+        #self.screen.after_cancel(0)
+        self.screen.destroy()
+    def characterSet(self, character): #Simple function that will reset the character of the user.
+        self.user['character'] = character
+        for self.a in range(len(self.characters)):
+            if self.characters[self.a] == self.user['character']: self.charButtons[self.a].button.configure(bg = "#00FF00")
+            else: self.charButtons[self.a].button.configure(bg = "#66ccff")
+
 data = open("userData.json", "r+")
-readline, existingUsers, buttons = data.readline(), [], [] #buttons will be used to get all of the user buttons offscreen.
-while readline != "":
-    readline = json.loads(readline)
-    existingUsers.append(readline['user'])
-    readline = data.readline()
 data.close()
-mainButtonMaker(None, existingUsers)
-screen.protocol("WM_DELETE_WINDOW", quit)
-screen.mainloop()  
+exit = False
+screen = tkinter.Tk("Welcome - User Selection", None, "User Selection")
+screen.geometry("1200x800")
+global Main
+Main = main(screen)
+screen.protocol("WM_DELETE_WINDOW", Main.quitCall)
+screen.after(50, Main.mainloop)
+screen.mainloop()

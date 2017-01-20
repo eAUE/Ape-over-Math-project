@@ -13,7 +13,7 @@ class Barrel(pygame.sprite.Sprite):
             self.barrel = pygame.image.load("Barrels/"+ self.barreltext)
             self.barrel.convert() #Convert it
             self.barrel.set_colorkey((0, 0, 0)) #Set the background stuff
-            self.barrel = pygame.transform.scale(self.barrel, (120, 120))#Scale it proeperly
+            self.barrel = pygame.transform.scale(self.barrel, (120, 120))#Scale it properly
             self.barrels.append(self.barrel)
         self.image = self.barrels[0].copy()
         self.rect = self.image.get_rect() #Get the rectangle.
