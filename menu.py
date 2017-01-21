@@ -48,14 +48,14 @@ class button(): #Use this to keep track of which button's which.
     def __init__(self, buttonMaker, frame, colour, command, column, row, theFont, text = None):
         self.userNo = buttonMaker
         if command == "register":
-            self.userSelection = tkinter.Button(frame, text = text + str(buttonMaker), bg = colour, width = 7, height = 1, justify = "center", activebackground = "#CC6600", 
+            self.userSelection = tkinter.Button(frame, text = "User " + str(buttonMaker), bg = colour, width = 7, height = 1, justify = "center", activebackground = "#CC6600", 
                                                 activeforeground = "#00FF00", command = lambda: Main.register(buttonMaker), font = theFont)
         else: self.userSelection = tkinter.Button(frame, text = text, width = 7, height = 1, activebackground = "#CC6600", activeforeground = "#00FF00", 
                                                 command = lambda: Main.goToD(buttonMaker), bg = colour, font = theFont)
         self.userSelection.grid(column = column, row = row, pady = 50, padx = 5)
-    def configure(self, colour, command): #A function to configure what the button does
-        if command == None: self.userSelection.configure(command = command, bg = colour)
-        elif command == "register": self.userSelection.configure(command = lambda: Main.register(self.userNo), bg = colour)
+    def configure(self, colour, command, name = None): #A function to configure what the button does
+        if command == None: self.userSelection.configure(command = command, bg = colour, text = name)
+        elif command == "register": self.userSelection.configure(command = lambda: Main.register(self.userNo), bg = colour, text = name)
         else: self.userSelection.configure(command = lambda: Main.goToD(self.userNo), bg = colour)
 class main():
     def __init__(self, screen):
@@ -91,6 +91,7 @@ class main():
             #   "Music Import": The user is importing their own music into the game.
             #   "play": The user is preparing to play the game.
             #   "restart": The user just logged in again
+            #   "returnGame": The user just returned from playing a game
             #   "exit": exiting the program.
 
             if self.state == "Transfer to Main Functions": 
@@ -99,23 +100,40 @@ class main():
                 self.scoreWriter()
             elif self.state == "restart":
                 self.userSelectUpdate()
+                self.organiser.add(self.Dashboard)
+                self.organiser.add(self.Settings)
+                self.organiser.add(self.Scores) #Add the old tabs back on to the screen.
                 self.organiser.select(1)
                 self.characterSet(self.user['character']) #Reset the user's character colours
+                self.scoreWriter(1)
                 self.state = "Idle"
             elif self.state == "quit": self.quit()
             elif self.state == "play":
                 self.screen.withdraw()
                 self.music.stop(self.screen)
                 self.score = game.main(self.user['difficulty'], self.user)
-                self.user['score'].append({'timeStamp': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 
-                              self.user['difficulty'], 'score': self.score}) #Add the score to the user's score record.
-                self.state = "idle"
+                if self.score != None: #Will be none if user quits pre-maturely
+                    self.user['score']['time'].append(time.strftime("%Y-%m-%d %H:%M"))
+                    self.user['score']['difficulty'].append(self.user['difficulty'])
+                    self.user['score']['score'].append(self.score) #Add the score to the user's score record.
+                self.state = "returnGame"
                 self.music.__init__()
                 self.screen.deiconify()
             elif self.state == "erase":
+                self.existingUsers.remove(self.user['user'])
+                self.user = {'user': None} #No user... Too bad...
                 self.userSelectUpdate()
+                self.organiser.select(0)
+                self.organiser.hide(1)
+                self.organiser.hide(2)
+                self.organiser.hide(3)
+            elif self.state == "returnGame":
+                self.scoreWriter(1) #1 to tell it not to re-generate buttons
         self.screen.after(50, self.mainloop)
     def userSelect(self): #Make a function for the user to select their user.
+        self.userBackground = tkinter.PhotoImage(file = "jungleLogin.png")
+        self.userBackground = tkinter.Label(self.userSelection, image = self.userBackground)
+        self.userBackground.place(relwidth = 1, relheight = 1, x = 0, y = 0)
         self.row, self.column = 0, 0
         for self.buttonMaker in range(1, 5): #Loop around making the buttons.
             if self.buttonMaker == 2: self.column = 1
@@ -123,7 +141,7 @@ class main():
             elif self.buttonMaker == 4: self.column, self.row = 1, 1
             if self.buttonMaker in self.existingUsers: #If the user already exists
                 self.colour = "#00FF00"
-                self.text = self.usernames[self.existingUsers.index(self.existingUsers[self.buttonMaker -1 ])] #Get the user's name
+                self.text = self.usernames[self.existingUsers.index(self.buttonMaker)] #Get the user's name
                 self.command = "exists"
                 self.Button = button(self.buttonMaker, self.userSelection, self.colour, self.command, self.column, self.row, self.font, self.text)
             else: #If the user does not already exist
@@ -138,8 +156,11 @@ class main():
         return
     def goToD(self, userNo, infoGather = None): #Function will prepare for going to the dashboard
         if infoGather != None:
-            self.nameBox.get()
-            self.user = {'gamertag': self.nameBox.get(), 'user':userNo, 'score': [], 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
+            self.name = self.nameBox.get()
+            if len(self.name) > 7 or len(self.name) < 2:
+                MessageBox.showerror("Invalid Length", "Your gamertag must be between 2 and 7 characters.")
+                return
+            self.user = {'gamertag': self.nameBox.get(), 'user':userNo, 'score': {'score': [], 'difficulty': [], 'timeStamp': []}, 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
             infoGather.destroy()
             self.data.seek(0)
             self.data.readlines()
@@ -155,7 +176,7 @@ class main():
                     self.user = self.readline
                     break
                 else: self.readline = self.data.readline()
-        if self.dashboardBool != True: 
+        if self.dashboardBool != True: #Is true when the user is in the dashboard already, so we must make it true when entering it.
             self.state = "Transfer to Main Functions"
             self.dashboardBool = True #We only want to make the dashboard once
         else: self.state = "restart"
@@ -164,13 +185,17 @@ class main():
             if self.updater + 1 == self.user['user']: 
                 self.colour = "#3399ff"
                 self.command = None
+                self.text = self.user['gamertag']
             elif self.updater + 1 in self.existingUsers: 
                 self.colour = "#00FF00"
                 self.command = "exists"
+                self.text = None
             else:
                 self.colour = "#717D7E"
                 self.command = "register"
-            self.buttons[self.updater].configure(self.colour, self.command)
+                self.text = "User " + str(self.updater + 1)
+            self.buttons[self.updater].configure(self.colour, self.command, self.text)
+        if self.state == "erase": self.state = "idle" #Otherwise it will run this continually
     def museImporter(self, id): #id will decide where to add the music
         self.fileLoc = tkFD.askopenfilename(title = "Select Wave Music Files")
         self.name, self.extension = os.path.splitext(self.fileLoc)
@@ -227,8 +252,9 @@ class main():
         self.data.seek(0)
         self.data.truncate()
         for self.userReader in range(len(self.users)): #Loop around deleting the right user
-            if json.loads(self.users[self.userReader].replace("\n", ""))['user'] == self.user['user']: del self.users['self.userReader']
+            if json.loads(self.users[self.userReader].replace("\n", ""))['user'] == self.user['user']: del self.users[self.userReader]
             else: self.data.write(self.users[self.userReader])
+        self.data.flush()
     def dashboard(self): #This is the function to create the user's dashboard. Will also be responsible for actually creating the user information.
         self.state = "Idle"
         print(self.user['difficulty'])
@@ -285,20 +311,35 @@ class main():
             #self.scroller = tkinter.Scrollbar(self.Scores)
             #self.scroller.place(x = 1115, y = 0, relheight = 1.0)
             self.organiser.add(self.Scores)
-            self.organiser.tab(3, text = "View Your Scores")
+            self.organiser.tab(3, text = "Scores")
             self.scoreFont = tkFont.Font(family = "terminal", size = 25)
         elif option == 1: self.scoreList.destroy()
-        self.scoreList = ScrolledText.ScrolledText(self.Scores, spacing1 = 10, font = self.scoreFont)
-        for self.scorewriter in range(len(self.user['score'])):           
-            ##Make tags to be able to edit these later
-            #self.timeStamptag = self.scoreList.tag_add("timeStamp", ("%d.%d" % (self.scorewriter, 0)), ("%d.%d" % (self.scorewriter, 1)))
-            #self.difficultytag = self.scoreList.tag_add("timeStamp", ("%d.%d" % (self.scorewriter, 1)), ("%d.%d" % (self.scorewriter, 2)))
-            #self.scoretag = self.scoreList.tag_add("timeStamp", ("%d.%d" % (self.scorewriter, 2)), ("%d.%d" % (self.scorewriter, 3)))
+        self.scoreList = ScrolledText.ScrolledText(self.Scores, spacing1 = 10, font = self.scoreFont, width = 30)
+        self.column = 2.0 #Used to determine where to place text later on 
+        if len(self.user['score']) <= 0:
+            self.scoreList.insert(tkinter.INSERT, "No Score... Get Playing!") #Tell the user they have no score and should start playing.
+        else:
+            self.scoreList.insert(1.0, "Timestamp--", ("timeHeader",))
+            self.scoreList.tag_config("timeHeader", justify = tkinter.LEFT, underline = 1)
+            self.scoreList.insert(tkinter.END, "Difficulty--", ("difHeader", ))
+            self.scoreList.tag_config("difHeader", justify = tkinter.CENTER, underline = 1)
+            self.scoreList.insert("1.end", "Score\n", ("scoreHeader",))
+            self.scoreList.tag_config("scoreHeader", justify = tkinter.LEFT, underline = 1)
+            if len(self.user['score']['score']) > 0: self.highScore = max(self.user['score']['score']) #Get the highscore to highlight it later.
+            for self.scorewriter in range(len(self.user['score']['score']) -1,  -1 , -1): #Count backwards to display most recent first
+                self.column += 1
+                #Make tags to be able to edit these later
 
-            #Put the text on
-            self.scoreList.insert("timeStamp", ("%d.%d" % (self.scorewriter, 2)) ,str(self.user['score'][self.scorewriter]['score']))
-            self.scoreList.insert("timeStamp", ("%d.%d" % (self.scorewriter, 1)), str(self.user['score'][self.scorewriter]['difficulty']))
-            self.scoreList.insert("timeStamp", ("%d.%d" % (self.scorewriter, 0)) , self.user['score'][self.scorewriter]['timeStamp'])
+                #Put the text on
+                self.scoreList.insert(self.column ,str(self.user['score']['timeStamp'][self.scorewriter]) + " - ", ("timeStamp",))
+                #self.timeStamptag = self.scoreList.tag_add("timeStamp", self.column, tkinter.END)
+                #self.difficultytag = self.scoreList.tag_add("difficulty", "timeStamp.last", tkinter.END)
+                self.scoreList.insert(tkinter.END, str(self.user['score']['difficulty'][self.scorewriter]) + " - ", ("difficulty",))
+                self.scoreList.insert(tkinter.END, str(self.user['score']['score'][self.scorewriter]) + "\n", ("score",))
+                #self.scoretag = self.scoreList.tag_add("score", "difficulty.last", tkinter.END)
+                self.scoreList.tag_config("difficulty", justify = 'center')
+                self.scoreList.tag_config("score", justify = 'right')
+                if self.user['score']['score'][self.scorewriter] == self.highScore: self.scoreList.tag_config("score", background = "#FFFBCC")
         self.scoreList.pack()
         self.scoreList.config(state = tkinter.DISABLED)
     def quitCall(self): 
