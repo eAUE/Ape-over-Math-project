@@ -447,7 +447,7 @@ class main():
             self.scoreList.vbar.destroy()
         self.scoreList = ScrolledText.ScrolledText(self.Scores, spacing1 = 10, font = self.scoreFont, width = 30)
         self.column = 2.0 #Used to determine where to place text later on 
-        if len(self.user['score']) <= 0:
+        if len(self.user['score']['score']) <= 0:
             self.scoreList.insert(tkinter.INSERT, "No Score... Get Playing!") #Tell the user they have no score and should start playing.
         else:
             self.scoreList.insert(1.0, "Timestamp--", ("timeHeader",))
