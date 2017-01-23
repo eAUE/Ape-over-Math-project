@@ -476,7 +476,7 @@ def questionCreator(difficulty): #Make a function that will make the question fo
                 num1, num2 = max(oldnum1, oldnum2), min(oldnum1, oldnum2) #Variable define: The numbers for subtraction
                 answer = num1 - num2 #Get the answer.
         elif operation == 3: #3: Multiplication
-            operation = chr(158) #Multiplication symbol
+            operation = chr(10005) #Multiplication symbol
             num1, num2 = random.randint(0, 12), random.randint(0, 12)
             answer = num1 * num2
         elif operation == 4: #4: Division
@@ -589,7 +589,7 @@ def questionCreator(difficulty): #Make a function that will make the question fo
             equation = {'questionType':questionType, 'answer': answer, 'equation':totalEquationStr} #Get ready to return this all.
 
     elif difficulty == 4: #Questions of the application type, where the person must apply their knowledge.
-            shape = random.randint(1, 1) #0: Rectangle, 1: Right Triangle, 2: Circle
+            shape = random.randint(0, 2) #0: Rectangle, 1: Right Triangle, 2: Circle
             unknown = random.randint(2, 2) #0: Perimeter, 1: Area, 2: Side
             if shape == 0: #Rectangle
                 l = random.randint(5, 100)
