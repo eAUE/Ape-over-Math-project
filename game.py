@@ -135,7 +135,7 @@ class Player(pygame.sprite.Sprite): #Make a class for the player
     def jump(self):
         self.timePassed = int(round(time.time() *1000)) - self.timeReg
         #self.intendHeight = int(round(-243/250000 * (self.timePassed - 500)**2 + 243))
-        self.intendHeight = int(round(-1/3125 * (self.timePassed - 750)**2 + 180))
+        self.intendHeight = int(round(-1/3125 * (self.timePassed - 750)**2 + 180)) #Quadratic equation vertex form: -1/3125(time - 750)^2 + 180
         #if self.timePassed <= 750: self.intendHeight = int(round(2/5*self.timePassed))
         #elif 750 < self.timePassed < 1750: self.intendHeight = int(round(-2/5625*(self.timePassed - 1125)**2 + 350))
         #elif self.timePassed >= 1750: self.intendHeight = int(round(-2/5 * self.timePassed + 900))
@@ -390,6 +390,7 @@ def main(difficulty, user): #User is the user's information
                     timeReg = time.time()
                     succession -= 0.3 #Subtract so that next time the barrel comes a little earlier each time, making it harder every time.
                     object.onScreen()
+                    barrelOptions.append(object)
                     objects.add(object) #Add it to the group of stuff that goes on screen.
                     posList.append(object.rect.x) #Append the x coordinate.
                     answerList.append(object.answer) #Also append the answer to the question
