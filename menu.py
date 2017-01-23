@@ -36,7 +36,7 @@ class musicer():
         if self.backgroundMusic.get_busy() != False: #Only run this if the channel isn't busy.
             return
         self.count += 1
-        self.backgroundMusic.play(self.queue[self.count % 5], 0)
+        self.backgroundMusic.play(self.queue[self.count % self.length], 0)
     def stop(self, screen):
         screen.after_cancel(0)
         self.backgroundMusic.stop()
@@ -115,6 +115,7 @@ class main():
                 self.userSelectUpdate()
                 self.museCheckboxer()
                 self.scoreWriter()
+                self.helpGen()
             elif self.state == "Menu Music Import":
                 self.museCheckboxer(1, self.fileName)
                 self.state = "idle"
@@ -126,12 +127,13 @@ class main():
                 self.organiser.select(1)
                 self.characterSet(self.user['character']) #Reset the user's character colours
                 self.scoreWriter(1)
+                self.difficultySet.set(self.user['difficulty'])
                 self.state = "Idle"
             elif self.state == "quit": self.quit()
             elif self.state == "play":
                 self.screen.withdraw()
                 self.music.stop(self.screen)
-                self.score = game.main(self.user['difficulty'], self.user)
+                self.score = game.main(self.oldUser['difficulty'], self.user)
                 if self.score != None: #Will be none if user quits pre-maturely
                     self.user['score']['timeStamp'].append(time.strftime("%Y-%m-%d %H:%M"))
                     self.user['score']['difficulty'].append(self.user['difficulty'])
@@ -149,11 +151,19 @@ class main():
                 self.organiser.hide(3)
             elif self.state == "returnGame":
                 self.scoreWriter(1) #1 to tell it not to re-generate buttons
+                self.state = "idle" #Go back to being idle once more!
             elif self.state == "eraseAll":
                 self.music.stop(self.screen)
                 self.data.seek(0)
                 self.data.truncate()
                 self.data.close()
+                self.origMusic = ["dontletmedown.wav", "happy.wav", "skyfall.wav", "nevergonnagiveyouup.wav", "magic.wav"]
+                for self.museReset in range(len(self.music.newFileList)): #We need to delete all the non-default music.
+                    if self.music.newFileList[self.museReset] not in self.origMusic: os.remove("Music/Menu/" + self.music.newFileList[self.museReset])
+                self.origGameMusic = ['Arc - Mind Vortex.wav', "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]
+                self.gameMuseList = os.listdir("Music/In game") #Get a list of all the game music.
+                for self.museReset2 in range(len(self.gameMuseList)):
+                    if self.gameMuseList[self.museReset2] not in self.origGameMusic: os.remove("Music/In game/" + self.gameMuseList[self.museReset2])
                 MessageBox.showinfo("Success", "All information deleted. The application will now quit.")
                 self.screen.destroy()
                 exit()
@@ -238,10 +248,10 @@ class main():
         MessageBox.showinfo("Success!", "Success! The music will be in your game music lineup.")
     def museToMenu(self, fileLoc): #A function to send the music to the menu folder
         self.newFileLoc = shutil.copy(fileLoc, "Music/Menu/") #Copy the file to the proper location.
-        self.fileName = os.path.split(self.newFileLoc)
+        self.dir, self.fileName = os.path.split(self.newFileLoc)
         self.music.newFileList.append(self.fileName)
         self.music.museList.append(self.fileName)
-        MessageBox.showinfo("Success!", "Success! The music will be in your menu music lineup.")
+        MessageBox.showinfo("Success!", "Success! The music will be in your menu music lineup \nafter restarting the application.")
         self.state = "Menu Music Import"
     def register(self, userNo):
         if userNo not in self.existingUsers:
@@ -284,7 +294,7 @@ class main():
                     self.music.museList.remove(self.music.newFileList[self.museChanger]) #Get it out of the music listing
             self.museCheckboxer(1) #Update the music checkboxes.
             MessageBox.showinfo("Saved!", "All Settings Saved! Note that changes to music settings will \ntake effect next time you start the application")
-
+        self.difficultySet.set(self.user['difficulty'])
     def erase(self): #Function to erase the user's data
         self.result = MessageBox.askokcancel("Are you sure?", "Erase all of your user data?")
         if not self.result: return #If they press cancel, cancel the erasing.
@@ -320,6 +330,7 @@ class main():
         self.settingsFont = tkFont.Font(family = "georgia", size = 20)
         self.charButtons, self.characters = [], [] #This will hold all of the character buttons that there are. The other one will have the actual character names
         self.difficultySet = tkinter.IntVar()
+        self.difficultySet.set(self.user['difficulty']) #Make the scrollbar the right difficulty setting to start.
         self.oldUser = self.user.copy() #Make a backup copy of the user in case they want to cancel
         self.characterSpace = tkinter.Frame(self.Settings) #Make a seperate frame for the character icons
         self.column, self.row = -1, -1
@@ -339,8 +350,8 @@ class main():
         self.importMenu = tkinter.Menubutton(self.Settings, text = "Import...", relief = tkinter.RAISED, font = self.settingsFont)
         self.importMenu.menu = tkinter.Menu(self.importMenu)
         self.importMenu['menu'] = self.importMenu.menu
-        self.importMenu.menu.add_command(label = "Import Game Music", command = lambda: self.museImporter(2), font = self.settingsFont)
-        self.importMenu.menu.add_command(label = "Import Menu Music", command = lambda: self.museImporter(1), font = self.settingsFont)
+        self.importMenu.menu.add_command(label = "Import Game Music", command = lambda: self.museImporter(1), font = self.settingsFont)
+        self.importMenu.menu.add_command(label = "Import Menu Music", command = lambda: self.museImporter(2), font = self.settingsFont)
 
         self.importMenu.grid(column = 0, row = 0)
         self.characterSpace.grid(column = 4, row = 2, rowspan = 4, columnspan = 8)
@@ -373,6 +384,21 @@ class main():
     def playtime(self):
         self.state = "play"
         self.screen.deiconify()
+    def helpGen(self): #Function to generate the help stuff
+        self.aboutTitle = tkinter.Label(self.HelpAbout, text = "About", font = self.settingsFont)
+        self.helpTitle = tkinter.Label(self.HelpAbout, text = "Help", font = self.settingsFont)
+        self.help = ScrolledText.ScrolledText(self.HelpAbout, width = 85, spacing1 = 10, wrap = tkinter.WORD)
+        self.about = ScrolledText.ScrolledText(self.HelpAbout, width = 45, spacing1 = 10, wrap = tkinter.WORD)
+        self.help.insert(1.0, "-----Playing the Game-----\n1.Move horizontally using the arrow keys or the \"A\" and \"D\" keys.\n2.You must type in the answer to the question on the barrel closest to you.\n3.You get 2 attempts at doing so.\n4.Once you get it rigt, the text above will go green. Jump over the barrel using \"SPACE\"\n5.You only get one attempt at doing so.\n6.Exit the game using the \"ESCAPE\" key.\n-----Users-----\nYou can have a maximum of 4 users, which you can delete from the settings menu.\nYou can erase all application data from the settings menu.\nEach user can import their own music for the game and select global music for the menu.\nUsers can also customize themselves in the settings menu.")
+        self.about.insert(1.0, "Author: Kyle Anderson.\nMusic credit available in \"readme.txt\" file in this directory.\nGame release 1.0.0")
+        self.helpTitle.grid(column = 0, row = 0)
+        self.aboutTitle.grid(column = 1, row = 0)
+        self.help.grid(column = 0, row = 1)
+        self.about.grid(column = 1, row = 1)
+        self.organiser.add(self.HelpAbout)
+        self.organiser.tab(4, text = "Help/About")
+        self.help.config(state = tkinter.DISABLED)
+        self.about.config(state = tkinter.DISABLED)
     def scoreWriter(self, option = 0): #Option 0 means that the buttons do need to be generated.
         if option == 0:
             #self.scroller = tkinter.Scrollbar(self.Scores)
@@ -380,7 +406,9 @@ class main():
             self.organiser.add(self.Scores)
             self.organiser.tab(3, text = "Scores")
             self.scoreFont = tkFont.Font(family = "terminal", size = 25)
-        elif option == 1: self.scoreList.destroy()
+        elif option == 1: 
+            self.scoreList.frame.destroy()
+            self.scoreList.vbar.destroy()
         self.scoreList = ScrolledText.ScrolledText(self.Scores, spacing1 = 10, font = self.scoreFont, width = 30)
         self.column = 2.0 #Used to determine where to place text later on 
         if len(self.user['score']) <= 0:
@@ -436,7 +464,7 @@ class main():
 
 data = open("userData.json", "r+")
 data.close()
-screen = tkinter.Tk("Welcome - User Selection", None, "User Selection")
+screen = tkinter.Tk("Ape Over Math", None, " Ape Over Math")
 screen.geometry("1200x800")
 global Main
 Main = main(screen)

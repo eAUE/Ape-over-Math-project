@@ -69,6 +69,11 @@ class Barrel(pygame.sprite.Sprite):
                 self.bPos = self.b.get_rect()
                 self.bPos.midtop = self.triangle.midbottom
                 self.displayText.blit(self.b, self.bPos)
+                #Do the "A" 
+                self.A = self.font.render("A = ", 1, (255, 255, 255))
+                self.APos = self.A.get_rect()
+                self.APos.center = self.triangle.center #Put it at the centre of the triangle rect, meaning where the hypotenuse is
+                self.displayText.blit(self.A, self.Apos)
             else:
                 #Do the b-value
                 if self.text[1] == None: self.text[1] = "b"
@@ -226,7 +231,10 @@ class timeDisplay(pygame.sprite.Sprite):
     def Update(self): #Make something to update the time display
         self.newTime = round(time.time())
         self.mins, self.secs = (self.newTime - self.startTime)//60, (self.newTime - self.startTime) % 60
-        self.image = self.font.render(str(self.mins) + ":" + str(self.secs), 1, (255, 255, 255))
+        self.mins, self.secs = str(self.mins), str(self.secs)
+        if len(self.mins) < 2: self.mins = "0" + self.mins
+        if len(self.secs) < 2: self.secs = "0" + self.secs
+        self.image = self.font.render(self.mins + ":" + self.secs, 1, (255, 255, 255))
 
 def box(screen, text, correct, oldTextPos): #Make this function to draw the box for the input.
     if oldTextPos != None: screen.fill((0 ,0 ,0), oldTextPos) #Get rid of what is there
@@ -315,6 +323,7 @@ def main(difficulty, user): #User is the user's information
         elif keyPressed == K_ESCAPE and menu:
             timePaused = time.time() - startPause #Get the total time we paused for.
             timeReg += timePaused
+            timedisplay.startTime += round(timePaused) #This will assure that the time display doesn't count while the player is in the pause menu.
             menu = False
             objects.remove(menubutton)
         elif keyPressed != K_ESCAPE and menu:
@@ -579,8 +588,8 @@ def questionCreator(difficulty): #Make a function that will make the question fo
             equation = {'questionType':questionType, 'answer': answer, 'equation':totalEquationStr} #Get ready to return this all.
 
     elif difficulty == 4: #Questions of the application type, where the person must apply their knowledge.
-            shape = random.randint(0, 2) #0: Rectangle, 1: Right Triangle, 2: Circle
-            unknown = random.randint(0, 2) #0: Perimeter, 1: Area, 2: Side
+            shape = random.randint(1, 1) #0: Rectangle, 1: Right Triangle, 2: Circle
+            unknown = random.randint(2, 2) #0: Perimeter, 1: Area, 2: Side
             if shape == 0: #Rectangle
                 l = random.randint(5, 100)
                 w = random.randint(5, 100)
