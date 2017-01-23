@@ -40,9 +40,6 @@
     <Compile Include="menu.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="restart.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="RST.py" />
     <Compile Include="server.py">
       <SubType>Code</SubType>
@@ -52,9 +49,14 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Elves versions\desktop.ini" />
     <Content Include="imperialMarch.wav" />
     <Content Include="readme.txt" />
     <Content Include="userData.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Elves versions\" />
+    <Folder Include="Player Background\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

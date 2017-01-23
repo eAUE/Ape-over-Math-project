@@ -133,7 +133,7 @@ class main():
             elif self.state == "play":
                 self.screen.withdraw()
                 self.music.stop(self.screen)
-                self.score = game.main(self.oldUser['difficulty'], self.user)
+                self.score = game.main(self.oldUser['difficulty'], self.oldUser)
                 if self.score != None: #Will be none if user quits pre-maturely
                     self.user['score']['timeStamp'].append(time.strftime("%Y-%m-%d %H:%M"))
                     self.user['score']['difficulty'].append(self.user['difficulty'])
@@ -143,12 +143,14 @@ class main():
                 self.screen.deiconify()
             elif self.state == "erase":
                 self.existingUsers.remove(self.user['user'])
+                self.bgReset(0) #0 to just erase this user's stuff.
                 self.user = {'user': None} #No user... Too bad...
                 self.userSelectUpdate()
                 self.organiser.select(0)
                 self.organiser.hide(1)
                 self.organiser.hide(2)
                 self.organiser.hide(3)
+  
             elif self.state == "returnGame":
                 self.scoreWriter(1) #1 to tell it not to re-generate buttons
                 self.state = "idle" #Go back to being idle once more!
@@ -164,6 +166,7 @@ class main():
                 self.gameMuseList = os.listdir("Music/In game") #Get a list of all the game music.
                 for self.museReset2 in range(len(self.gameMuseList)):
                     if self.gameMuseList[self.museReset2] not in self.origGameMusic: os.remove("Music/In game/" + self.gameMuseList[self.museReset2])
+                self.bgReset(1) #1 to delete everything.
                 MessageBox.showinfo("Success", "All information deleted. The application will now quit.")
                 self.screen.destroy()
                 exit()
@@ -198,7 +201,7 @@ class main():
             if len(self.name) > 7 or len(self.name) < 2:
                 MessageBox.showerror("Invalid Length", "Your gamertag must be between 2 and 7 characters.")
                 return
-            self.user = {'gamertag': self.nameBox.get(), 'user':userNo, 'score': {'score': [], 'difficulty': [], 'timeStamp': []}, 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
+            self.user = {'background': "", 'gamertag': self.nameBox.get(), 'user':userNo, 'score': {'score': [], 'difficulty': [], 'timeStamp': []}, 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
             infoGather.destroy()
             self.data.seek(0)
             self.data.readlines()
@@ -233,7 +236,37 @@ class main():
                 self.command = "register"
                 self.text = "User " + str(self.updater + 1)
             self.buttons[self.updater].configure(self.colour, self.command, self.text)
-        if self.state == "erase": self.state = "idle" #Otherwise it will run this continually
+        if self.state == "erase": self.state = "idle" #Otherwise it will run this continually.
+    def bgReset(self, id):
+        if id == 1: #Erase all
+            self.filesToDelete = os.listdir("Player Background/")
+            for self.deleter in range(len(self.filesToDelete)):
+                self.name, self.ext = os.path.splitext(self.filesToDelete[self.deleter])
+                if self.ext == ".png": os.remove("Player Background/" + self.filesToDelete[self.deleter]) #If it is of .png, remove it.
+            self.user['background'] = ""
+        elif id == 0: #Erase just one
+            os.remove("Player Background/" + self.user['background'])
+            self.user['background'] = ""
+    def bgImporter(self): #Function to import the background for the game.
+        MessageBox.showinfo("Picture Import", "To begin, select a \".png\" file of the dimensions of 2x3.")
+        self.imgLoc = tkFD.askopenfilename(title = "Select a .png file.")
+        self.imgName, self.imgExtension = os.path.splitext(self.imgLoc) #Making sure that it is .png
+        if self.imgExtension != ".png": MessageBox.showerror("Invalid", "The filetype is invalid. Mus be a \".png\" file.")
+        else: 
+            try:
+                if self.user['background'] != "": #Otherwise permission error
+                    os.remove("Player Background/" + self.user['background'])
+            except PermissionError: #If there are permission issues
+                MessageBox.showerror("Operation Failed.", "Access to the folder was denied.")
+                return
+            try:
+                shutil.copy(self.imgLoc, "Player Background/") #Copy to the local player background folder.
+            except PermissionError: 
+                MessageBox.showerror("Operation Failed.", "Access to the folder was denied.")
+                return
+            self.dir, self.newImgLoc = os.path.split(self.imgLoc)
+            self.user['background'] = self.newImgLoc #Make it accessible by the game program.
+            MessageBox.showinfo("Success!", "Success! You will see the new background after you press save.\nIf you press discard, it will be reset.")
     def museImporter(self, id): #id will decide where to add the music
         self.fileLoc = tkFD.askopenfilename(title = "Select Wave Music Files")
         self.name, self.extension = os.path.splitext(self.fileLoc)
@@ -352,6 +385,8 @@ class main():
         self.importMenu['menu'] = self.importMenu.menu
         self.importMenu.menu.add_command(label = "Import Game Music", command = lambda: self.museImporter(1), font = self.settingsFont)
         self.importMenu.menu.add_command(label = "Import Menu Music", command = lambda: self.museImporter(2), font = self.settingsFont)
+        self.importMenu.menu.add_command(label = "Import Background Image", command = self.bgImporter, font = self.settingsFont) #Make it possible for the user to import background images.
+        self.importMenu.menu.add_command(label = "Reset Background Image", command = lambda: self.bgReset(0), font = self.settingsFont) #Make it possible to reset the background
 
         self.importMenu.grid(column = 0, row = 0)
         self.characterSpace.grid(column = 4, row = 2, rowspan = 4, columnspan = 8)
