@@ -391,6 +391,8 @@ def main(difficulty, user): #User is the user's information
                     succession -= 0.3 #Subtract so that next time the barrel comes a little earlier each time, making it harder every time.
                     object.onScreen()
                     objects.add(object) #Add it to the group of stuff that goes on screen.
+                    posList.append(object.rect.x) #Append the x coordinate.
+                    answerList.append(object.answer) #Also append the answer to the question
             if len(barrelOptions) > 0:
                 if len(posList) > 1: furthestRight = max(posList) + 120 #Prevent the player from going too close to the next barrel.
                 answerPos = posList.index(max(posList))
@@ -476,11 +478,11 @@ def questionCreator(difficulty): #Make a function that will make the question fo
                 num1, num2 = max(oldnum1, oldnum2), min(oldnum1, oldnum2) #Variable define: The numbers for subtraction
                 answer = num1 - num2 #Get the answer.
         elif operation == 3: #3: Multiplication
-            operation = chr(10005) #Multiplication symbol
+            operation = chr(215) #Multiplication symbol
             num1, num2 = random.randint(0, 12), random.randint(0, 12)
             answer = num1 * num2
         elif operation == 4: #4: Division
-            operation = chr(246) #Division symbol FTW
+            operation = chr(247) #Division symbol FTW
             num2 = random.randint(0, 12) #num2 is the divisor
             num1 = num2 * random.randint(0, 12) #num1 is then number to be divided.
             answer = num1 // num2
