@@ -139,6 +139,7 @@ class main():
                     self.user['score']['difficulty'].append(self.user['difficulty'])
                     self.user['score']['score'].append(self.score) #Add the score to the user's score record.
                 self.state = "returnGame"
+                self.scoreWriter(1)
                 self.music.__init__(self.museList)
                 self.screen.deiconify()
             elif self.state == "erase":
@@ -425,7 +426,7 @@ class main():
         self.help = ScrolledText.ScrolledText(self.HelpAbout, width = 85, spacing1 = 10, wrap = tkinter.WORD)
         self.about = ScrolledText.ScrolledText(self.HelpAbout, width = 45, spacing1 = 10, wrap = tkinter.WORD)
         self.help.insert(1.0, "-----Playing the Game-----\n1.Move horizontally using the arrow keys or the \"A\" and \"D\" keys.\n2.You must type in the answer to the question on the barrel closest to you.\n3.You get 2 attempts at doing so.\n4.Once you get it rigt, the text above will go green. Jump over the barrel using \"SPACE\"\n5.You only get one attempt at doing so.\n6.Exit the game using the \"ESCAPE\" key.\n-----Users-----\nYou can have a maximum of 4 users, which you can delete from the settings menu.\nYou can erase all application data from the settings menu.\nEach user can import their own music for the game and select global music for the menu.\nUsers can also customize themselves in the settings menu.")
-        self.about.insert(1.0, "Author: Kyle Anderson.\nMusic credit available in \"readme.txt\" file in this directory.\nGame release 1.0.0")
+        self.about.insert(1.0, "Author: Kyle Anderson.\nMusic credit available in \"readme.txt\" file in this directory.\nGame release 1.0")
         self.helpTitle.grid(column = 0, row = 0)
         self.aboutTitle.grid(column = 1, row = 0)
         self.help.grid(column = 0, row = 1)
@@ -455,21 +456,21 @@ class main():
             self.scoreList.tag_config("difHeader", justify = tkinter.CENTER, underline = 1)
             self.scoreList.insert("1.end", "Score\n", ("scoreHeader",))
             self.scoreList.tag_config("scoreHeader", justify = tkinter.LEFT, underline = 1)
-            if len(self.user['score']['score']) > 0: self.highScore = max(self.user['score']['score']) #Get the highscore to highlight it later.
+            self.highScore = max(self.user['score']['score']) #Get the highscore to highlight it later.
             for self.scorewriter in range(len(self.user['score']['score']) -1,  -1 , -1): #Count backwards to display most recent first
                 self.column += 1
                 #Make tags to be able to edit these later
 
                 #Put the text on
-                self.scoreList.insert(self.column ,str(self.user['score']['timeStamp'][self.scorewriter]) + " - ", ("timeStamp",))
+                self.scoreList.insert(self.column ,str(self.user['score']['timeStamp'][self.scorewriter]) + " - ", ("timeStamp" + str(self.scorewriter),)) #Make unique tag
                 #self.timeStamptag = self.scoreList.tag_add("timeStamp", self.column, tkinter.END)
                 #self.difficultytag = self.scoreList.tag_add("difficulty", "timeStamp.last", tkinter.END)
-                self.scoreList.insert(tkinter.END, str(self.user['score']['difficulty'][self.scorewriter]) + " - ", ("difficulty",))
-                self.scoreList.insert(tkinter.END, str(self.user['score']['score'][self.scorewriter]) + "\n", ("score",))
+                self.scoreList.insert(tkinter.END, str(self.user['score']['difficulty'][self.scorewriter]) + " - ", ("difficulty" + str(self.scorewriter),))
+                self.scoreList.insert(tkinter.END, str(self.user['score']['score'][self.scorewriter]) + "\n", ("score" + str(self.scorewriter),))
                 #self.scoretag = self.scoreList.tag_add("score", "difficulty.last", tkinter.END)
                 self.scoreList.tag_config("difficulty", justify = 'center')
                 self.scoreList.tag_config("score", justify = 'right')
-                if self.user['score']['score'][self.scorewriter] == self.highScore: self.scoreList.tag_config("score", background = "#FFFBCC")
+                if self.user['score']['score'][self.scorewriter] == self.highScore: self.scoreList.tag_config("score" + str(self.scorewriter), background = "#FFFBCC")
         self.scoreList.pack()
         self.scoreList.config(state = tkinter.DISABLED)
     def quitCall(self): 
