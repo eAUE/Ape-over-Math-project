@@ -3,28 +3,97 @@ from pygame.locals import *
 clock = pygame.time.Clock()
 class Barrel(pygame.sprite.Sprite):
     def __init__(self, difficulty):
+        self.difficulty = difficulty
         super().__init__()
-        self.text, self.answer = questionAnalyzer(difficulty) #Get the question to display on the barrel.
         self.correct, self.passed = False, None #Make sure this variable is false to start. Will become true when the question has been answered correctly and when the barrel has been passed.
         #Passed will be true if jumped over, false if the player hits it and none while neither has happene.d
         self.barrels = [] #Variable define: A variable to hold the multiple instances of barrels
         for self.a in range(0, 90, 10): #Loop around opening stuff
-            barreltext = "Barrel" + str(self.a) + ".png" #Get the name of the next barrel.
-            self.barrel = pygame.image.load(barreltext)
+            self.barreltext = "Barrel" + str(self.a) + ".png" #Get the name of the next barrel.
+            self.barrel = pygame.image.load("Barrels/"+ self.barreltext)
             self.barrel.convert() #Convert it
             self.barrel.set_colorkey((0, 0, 0)) #Set the background stuff
-            self.barrel = pygame.transform.scale(self.barrel, (120, 120))#Scale it proeperly
+            self.barrel = pygame.transform.scale(self.barrel, (120, 120))#Scale it properly
             self.barrels.append(self.barrel)
         self.image = self.barrels[0].copy()
         self.rect = self.image.get_rect() #Get the rectangle.
-        self.rect.move_ip(-90 - self.rect.x, 680) #Move the rectangle to the proper locations.
+        self.rect.bottomright = (0, 800) #Move the rectangle to the proper locations.
         self.instance = 36
         #Text now
         self.font = pygame.font.SysFont("timesnewroman", 17) #Get the font ready
-        self.displayText = self.font.render(self.text, 1, (255, 255, 255)) #Render text
-        self.textpos = self.displayText.get_rect() #Set up for placing the text in the centre.
-        self.textpos.center = self.image.get_rect().center #Place the font in the centre.
-        self.image.blit(self.displayText, self.textpos)
+    def onScreen(self): #This will prepare the barrel for going onto the screen.
+        self.text, self.answer, self.type = questionAnalyzer(self.difficulty) #Get the question to display on the barrel.
+        if self.type == None or self.type == 'circle':
+            self.displayText = self.font.render(self.text, 1, (255, 255, 255)) #Render text
+            self.textPos = self.displayText.get_rect() #Set up for placing the text in the centre.
+            self.textPos.center = self.image.get_rect().center #Place the font in the centre.
+        elif self.type == 'rectangle': 
+            self.displayText = pygame.Surface((120, 120), pygame.SRCALPHA, 32) #Make a surface with the same dimensions as the barrel
+            self.displayText = self.displayText.convert_alpha()
+            self.textPos = self.displayText.get_rect()
+            self.textPos.center = self.image.get_rect().center
+            self.rectangle = pygame.draw.rect(self.displayText, (0, 153, 255), (self.textPos.centerx - 30, self.textPos.centery - 30, 60, 60))
+            #Do the length
+            self.h = self.font.render(str(self.text[0]), 1, (255, 255, 255))
+            self.hPos = self.h.get_rect()
+            self.hPos.midright = self.rectangle.midleft
+            self.displayText.blit(self.h, self.hPos)
+            #Do the width
+            self.b = self.font.render(str(self.text[1]), 1, (255, 255, 255))
+            self.bPos = self.b.get_rect()
+            self.bPos.midtop = self.rectangle.midbottom
+            self.displayText.blit(self.b, self.bPos)
+            #Do the area or perimeter
+            self.temp = self.text[2] #Temporary variable to hold either the area or perimeter
+            if self.temp == None: self.temp = "A = " #SOlving for area
+            elif self.temp == False: self.temp = self.text[3]
+            if self.temp == None: self.temp = "P = " #Solving for perimeter
+            self.b = self.font.render(str(self.temp), 1, (255, 255, 255))
+            self.bPos = self.b.get_rect()
+            self.bPos.center = self.rectangle.center
+            self.displayText.blit(self.b, self.bPos)
+        elif self.type == 'triangle':
+            self.displayText = pygame.Surface((120, 120), pygame.SRCALPHA, 32) #Make a surface with the same dimensions as the barrel
+            self.displayText = self.displayText.convert_alpha()
+            self.textPos = self.displayText.get_rect()
+            self.textPos.center = self.image.get_rect().center
+            self.triangle = pygame.draw.polygon(self.displayText, (0, 153, 255), [(self.textPos.w//4, self.textPos.h//4), (self.textPos.w//4, self.textPos.h//4 * 3), (self.textPos.w//4 * 3, self.textPos.h//4 * 3)]) #Draw a right triangle
+            if len(self.text) < 3: #If we are asking a simple area question
+                #Do the height
+                self.h = self.font.render(str(self.text[1]), 1, (255, 255, 255))
+                self.hPos = self.h.get_rect()
+                self.hPos.midright = self.triangle.midleft
+                self.displayText.blit(self.h, self.hPos)
+                #Do the base
+                self.b = self.font.render(str(self.text[0]), 1, (255, 255, 255))
+                self.bPos = self.b.get_rect()
+                self.bPos.midtop = self.triangle.midbottom
+                self.displayText.blit(self.b, self.bPos)
+                #Do the "A" 
+                self.A = self.font.render("A = ", 1, (255, 255, 255))
+                self.APos = self.A.get_rect()
+                self.APos.center = self.triangle.center #Put it at the centre of the triangle rect, meaning where the hypotenuse is
+                self.displayText.blit(self.A, self.Apos)
+            else:
+                #Do the b-value
+                if self.text[1] == None: self.text[1] = "b"
+                self.h = self.font.render(str(self.text[1]), 1, (255, 255, 255))
+                self.hPos = self.h.get_rect()
+                self.hPos.midtop = self.triangle.midbottom
+                self.displayText.blit(self.h, self.hPos)
+                #Do the a-value
+                if self.text[0] == None: self.text[0] = "a"
+                self.b = self.font.render(str(self.text[0]), 1, (255, 255, 255))
+                self.bPos = self.b.get_rect()
+                self.bPos.midright = self.triangle.midleft
+                self.displayText.blit(self.b, self.bPos)
+                #Do the c-value
+                if self.text[2] == None: self.text[2] = "c"
+                self.c = self.font.render(str(self.text[2]), 1, (255, 255, 255))
+                self.cPos = self.c.get_rect()
+                self.cPos.center = self.triangle.center
+                self.displayText.blit(self.c, self.cPos)
+
     def roll(self, movement):
         self.instance += 1
         if 9 <= self.instance % 36 <= 17:
@@ -38,34 +107,29 @@ class Barrel(pygame.sprite.Sprite):
             self.image = pygame.transform.rotozoom(self.image, -270, 1)
         else: self.image = self.barrels[self.instance % 36].copy()
         self.rect = self.rect.move(movement, 0)#Move the barrel to the right
-        self.textpos.center = self.image.get_rect().center
-        self.image.blit(self.displayText, self.textpos)
+        self.textPos.center = self.image.get_rect().center
+        self.image.blit(self.displayText, self.textPos)
     def reset(self, difficulty): #This function will be used to make a new question for the barrel and put it back in the original position.
         self.image = self.barrels[0].copy()
         self.correct, self.passed = False, None
         self.instance = 36
-        self.rect.move_ip((90 - self.rect.x), 0)
-        self.text, self.answer = questionAnalyzer(difficulty)
-        self.displayText = self.font.render(self.text, 1, (255, 255, 255)) #Render text
-        self.textpos = self.displayText.get_rect() #Set up for placing the text in the centre.
-        self.textpos.center = self.image.get_rect().center #Place the font in the centre.
-        self.image.blit(self.displayText, self.textpos)
+        self.rect.bottomright = (0, 800)
 
 class Player(pygame.sprite.Sprite): #Make a class for the player
-    def __init__(self):
+    def __init__(self, version):
         super().__init__()
         self.lives = 2 #2 lives before the game ends.
         self.done = False #Used for jumping the character
         #self.image = pygame.Surface((100, 300), pygame.SRCALPHA, 32)
         #self.image = self.image.convert_alpha()
-        self.image = pygame.image.load("elf.png")
+        self.image = pygame.image.load("Elves versions/" + version)
         self.image.convert()
         self.image = pygame.transform.scale(self.image, (150, 150))
         self.rect = self.image.get_rect()
         #self.bottom = pygame.draw.rect(self.image, (255, 255, 255), (self.rect.centerx -50, self.rect.h//2 -50, 100, 100))
         #self.body = pygame.draw.circle(self.image, (255, 255, 255), (self.rect.centerx, self.rect.h//6 * 5), 50)
         #self.head = pygame.draw.polygon(self.image, (255, 255, 255), [(self.rect.w//4, 0), (self.rect.w//4 *3, 0), (self.rect.w ,self.rect.h//6), (self.rect.w//4 *3, self.rect.h//3), (self.rect.w//4, self.rect.h//3), (0, self.rect.h//6)])
-        self.rect.move_ip(900, 650)
+        self.rect.bottomright = (1200, 800) #Reposition at 1200, 800
         self.originalRect = self.rect.copy() #Make this for referencing original position.
         self.timeReg, self.initVel = 0, (9.81 * math.sqrt(120/49))/1000 #Used for the jumping later.
     def jump(self):
@@ -92,7 +156,12 @@ class Player(pygame.sprite.Sprite): #Make a class for the player
         elif direction == "l":
             if self.rect.left -7 < minimumPos: self.rect.move_ip(minimumPos - self.rect.left, 0)
             else: self.rect.move_ip(-7, 0)
-#    def deathAnimation(self):
+    def deathAnimation(self, timeSinceDeath):
+        self.deathTime = int(round(time.time()*1000)) - timeSinceDeath #Time in miliseconds to be more precise.
+        self.rect.y = self.originalRect.y - (int(round(-1/2500*(self.deathTime - 1000)**2 + 400)))
+        if 50 < (self.deathTime % 200) <= 199: self.image = pygame.transform.rotozoom(self.image, 90, 1) #Rotate the character.
+        if self.deathTime >= 2500: return True #Stop eventually
+        return False
 
 class AnswerBoard(pygame.sprite.Sprite): #Make a class for the answering board
     def __init__(self, screen):
@@ -151,6 +220,21 @@ class Menu(pygame.sprite.Sprite): #Make a menubutton class
         #self.textPos = self.text.get_rect()
         #self.textPos.center = (self.image.get_rect().centerx, self.image.get_rect().h/3 *2)
         #self.image.blit(self.text, self.textPos)
+class timeDisplay(pygame.sprite.Sprite):
+    def __init__(self, screen):
+        super().__init__()
+        self.startTime = round(time.time()) #Set the start time of the game.
+        self.font = pygame.font.SysFont("timesnewroman", 35)
+        self.image = self.font.render("00:00", 1, (255, 255, 255))
+        self.rect = self.image.get_rect()
+        self.rect.topright = screen.get_rect().topright
+    def Update(self): #Make something to update the time display
+        self.newTime = round(time.time())
+        self.mins, self.secs = (self.newTime - self.startTime)//60, (self.newTime - self.startTime) % 60
+        self.mins, self.secs = str(self.mins), str(self.secs)
+        if len(self.mins) < 2: self.mins = "0" + self.mins
+        if len(self.secs) < 2: self.secs = "0" + self.secs
+        self.image = self.font.render(self.mins + ":" + self.secs, 1, (255, 255, 255))
 
 def box(screen, text, correct, oldTextPos): #Make this function to draw the box for the input.
     if oldTextPos != None: screen.fill((0 ,0 ,0), oldTextPos) #Get rid of what is there
@@ -189,7 +273,15 @@ def questionAnalyzer(difficulty): #Make a function that will generate the barrel
         elif 4<= questionType <= 5: 
             text = question['equation']
             answer = question['answer']
-    return (text, answer)
+    elif difficulty == 4:
+        type = question['type']
+        answer = question['answer']
+        if type == 'rectangle' or type == 'triangle': 
+            text = question['values']
+        elif type == 'circle':
+            text = str(question['A']) +  "=" + chr(960) + str(question['r']) + "^2"
+        return (text, answer, question['type'])
+    return (text, answer, None)
 def main(difficulty, user): #User is the user's information
     pygame.init()
     screen = pygame.display.set_mode((1200, 800))
@@ -204,15 +296,16 @@ def main(difficulty, user): #User is the user's information
     backgroundJungle = backgroundJungle.convert()
     screen.blit(backgroundJungle, (0,0))
     succession, score = 20.0, 0  #Variable define: This variable will control the rate at which barrels hurtle at the player. Score is the player's score.
-    barrel, answerBoard, scoreboard, character, menubutton =  Barrel(difficulty), AnswerBoard(screen), scoreDisplay(), Player(), Menu()
+    barrel, answerBoard, scoreboard, character, menubutton, timedisplay =  Barrel(difficulty), AnswerBoard(screen), scoreDisplay(), Player(user['character']), Menu(), timeDisplay(screen)
     barrels = pygame.sprite.Group(barrel) #Add the text and the barrel to the barrels group
     for barrelMaker in range(0, 5): #Make 5 more barrels so we do not need to make them during the game. Also restricts the game to allow only 6 barrels at a time.
         #newbarrel = copy.deepcopy(barrel) #Copy the last barrel.
         newbarrel = Barrel(difficulty)
         #newbarrel.reset(difficulty)
         barrels.add(newbarrel)
-    objects = pygame.sprite.Group(barrel, answerBoard, scoreboard, character)
-    jump, movement, jumpStat, reg, furthestRight, menu, timepaused, answerChances = False, 1, False, False, 0, False, 0, 2 #Variable define: reg determines if the jumping of the player has been registered already.
+    barrel.onScreen()
+    objects = pygame.sprite.Group(barrel, answerBoard, scoreboard, character, timedisplay)
+    jump, movement, jumpStat, reg, furthestRight, menu, timepaused, answerChances = False, 3, False, False, 0, False, 0, 2 #Variable define: reg determines if the jumping of the player has been registered already.
     inputted = "" #Make a variable for what the user inputs.
     turn = 0 #Variable define: Will be used to determine if we should turn the barrel or not.
     correct = None #Define some variables to be used later.
@@ -230,17 +323,19 @@ def main(difficulty, user): #User is the user's information
         elif keyPressed == K_ESCAPE and menu:
             timePaused = time.time() - startPause #Get the total time we paused for.
             timeReg += timePaused
+            timedisplay.startTime += round(timePaused) #This will assure that the time display doesn't count while the player is in the pause menu.
             menu = False
             objects.remove(menubutton)
         elif keyPressed != K_ESCAPE and menu:
             if menubutton.rect.topleft < pygame.mouse.get_pos() < menubutton.rect.bottomright and pygame.mouse.get_pressed() == (True, False, False):
+                pygame.mixer.quit()
                 pygame.quit()
                 return None
             objects.draw(screen)
             pygame.display.flip()
             continue
-        if keyPressed == K_RIGHT: character.move("r", furthestRight)
-        elif keyPressed == K_LEFT: character.move("l", furthestRight)
+        if keyPressed == K_RIGHT or keyPressed == K_d: character.move("r", furthestRight)
+        elif keyPressed == K_LEFT or keyPressed == K_a: character.move("l", furthestRight)
         if jump and keyPressed == K_SPACE or jumpStat == True: 
             if not reg:
                 inputted = ""
@@ -252,22 +347,24 @@ def main(difficulty, user): #User is the user's information
             if not jumpStat: 
                 reg = False
         turn += 1
+        furthestRight = 0 #Reset this variable
         clock.tick(60) #Limit to 60 fps
         screen.fill((0, 0, 0))
         screen.blit(backgroundJungle, (0,0))
-        if turn % 5400 == 0: movement += 1
-        if turn % 2 == 0: #Limit how fast the barrels move.
+        #if turn % 5400 == 0: movement += 1
+        if turn % 4 == 0: #Limit how many times the barrels move.
             posList, answerList, barrelOptions = [], [], []
             collisionList = pygame.sprite.spritecollide(character, barrels, False, None) #Get a list of the barrels that are colliding with the player.
             for collisionGo in range(0, len(collisionList)):
-                if collisionList[collisionGo].passed != False: #Tell the barrel it has been hit, but only if it doesn't already know this
+                if collisionList[collisionGo] in objects: #Only do this for barrels that are actually in the game.
+                    answerChances = 2 #Reset this variable so the user gets more chances to answer the question.
                     character.lives -= 1 #Subtract from the lives of the player
                     inputted = ""
                     correct = None
-                    character.hit()
+                    if character.lives > 0: character.hit() #Only do this while no death animation will go
                     objects.remove(collisionList[collisionGo])
                     collisionList[collisionGo].reset(difficulty)
-                    collisionList[collisionGo].passed = False
+                    #collisionList[collisionGo].passed = False
             barrelList = barrels.sprites()
             for barrelRoller in range(0, len(barrelList)): #Loop around the barrels group to make them all roll
                 object = barrelList[barrelRoller]
@@ -275,6 +372,7 @@ def main(difficulty, user): #User is the user's information
                     object.roll(movement)
                     if character.rect.right < object.rect.left and object.correct and object.passed == None: #This will decide if the player has passed the object.
                         object.passed = True
+                        answerChances = 2 #Reset this variable so the player can answer the questions again in the future.
                         score += 5
                     if object.rect.left >= 1200: 
                         objects.remove(object) #If the barrel runs off screen, remove it from the group of onscreen stuff.
@@ -289,7 +387,8 @@ def main(difficulty, user): #User is the user's information
                         objects.update(object) #Update the objects class
                 elif time.time() - timeReg >= succession: #If this is true, make another barrel.
                     timeReg = time.time()
-                    succession -= 0.1 #Subtract so that next time the barrel comes a little earlier each time, making it harder every time.
+                    succession -= 0.3 #Subtract so that next time the barrel comes a little earlier each time, making it harder every time.
+                    object.onScreen()
                     objects.add(object) #Add it to the group of stuff that goes on screen.
             if len(barrelOptions) > 0:
                 if len(posList) > 1: furthestRight = max(posList) + 120 #Prevent the player from going too close to the next barrel.
@@ -297,7 +396,7 @@ def main(difficulty, user): #User is the user's information
                 answer = answerList[answerPos]
                 barrelToAnswer = barrelOptions[answerPos] #Need this in case the user get the answer right.
             else: furhtestRight = 0
-        if len(barrelOptions) > 0 and type(keyPressed)== int and (48 <= keyPressed <= 57 or keyPressed == 45): #We make sure that they are only inputting numbers or negative sign "-"
+        if len(barrelOptions) > 0 and type(keyPressed)== int and (48 <= keyPressed <= 57 or keyPressed == 45) and answerChances > 0: #We make sure that they are only inputting numbers or negative sign "-"
             if correct == False:
                 correct = None
                 inputted = ""
@@ -309,17 +408,29 @@ def main(difficulty, user): #User is the user's information
                     barrelToAnswer.correct, correct = True, True #True to be green and to tell the barrel it has been answered.
                     score += 10 #Increase score per question answered correctly
                     jump = True
-                    print("Jump!")
-            else: correct = False
+            else: 
+                correct = False
+                answerChances -= 1 #Subtract from the amount of chances the user gets
         answerBoard.change(screen, correct, inputted) #Update the answering board.
         scoreboard.Update(score)
-        objects.update(answerBoard, scoreboard, character)
+        timedisplay.Update()
+        objects.update(answerBoard, scoreboard, character, timedisplay)
         objects.draw(screen)
         pygame.display.flip()
     deathSound = pygame.mixer.Sound("deathSound.wav")
     deathSound.set_volume(1.0)
     musicSelection.stop()
     deathSound.play(0)
+    timetoDeath = int(round(time.time()*1000)) #Get the time in miliseconds since beginning of the death
+    done = False
+    while not done:
+        clock.tick(60)
+        done = character.deathAnimation(timetoDeath)
+        objects.update(character)
+        screen.fill((0, 0, 0))
+        screen.blit(backgroundJungle, (0,0))
+        objects.draw(screen)
+        pygame.display.flip()
     objects.add(menubutton)
     while True:
         event = pygame.event.poll()
@@ -476,6 +587,60 @@ def questionCreator(difficulty): #Make a function that will make the question fo
                 totalEquationStr += str(totalEquation[equationMaker])
             equation = {'questionType':questionType, 'answer': answer, 'equation':totalEquationStr} #Get ready to return this all.
 
-        #elif difficulty == 4:
+    elif difficulty == 4: #Questions of the application type, where the person must apply their knowledge.
+            shape = random.randint(1, 1) #0: Rectangle, 1: Right Triangle, 2: Circle
+            unknown = random.randint(2, 2) #0: Perimeter, 1: Area, 2: Side
+            if shape == 0: #Rectangle
+                l = random.randint(5, 100)
+                w = random.randint(5, 100)
+                unknowner = False
+                if unknown == 2: 
+                    unknowner = True #Variable to tell the two other if statements if we will have an unknown side length
+                    unknown = random.randint(0, 1) #Chose between area or perimeter.
+                if unknown == 0:
+                    unknown = "Perimeter"
+                    A = False
+                    answer = 2*(l + w) #Perimeter
+                    P = None
+                    if unknowner:
+                        P = "P=" + str(answer)
+                        answer = l
+                        l = "L"
+                elif unknown == 1: 
+                    unknown = "Area"
+                    P = False
+                    answer = l*w #Area
+                    A = None
+                    if unknowner: 
+                        A = "A=" + str(answer)
+                        answer = l
+                        l = "L"
+                equation =  {'type': 'rectangle', 'values': [l, w, A, P], 'answer': answer} #Return a proper dictionary
+            elif shape == 1: #Triangle
+                b = random.randint(1, 10)
+                h = random.randint(1, 10)
+                if 0 <= unknown <= 1: 
+                    answer = b*h//2 #Get the area
+                    values = [b, h]
+                elif unknown == 2:
+                    unknown2 = random.randint(0, 2) #Chose which side, between the 3 triangle sides are unknown.
+                    right = False #We need for num1 and num2 to not both be odd, so loop around until they're right
+                    while not right:
+                        num1, num2 = random.randint(1, 10), random.randint(1, 10)
+                        if num1 %2 != 0 and num2 %2 != 0: continue
+                        else: right = True
+                    m, n = max(num1, num2), min(num1, num2)
+                    k = random.randint(2, 7)
+                    values = [k*(m**2 - n**2), k* 2*m*n, k*(m**2 + n**2)]
+                    answer = values[unknown2] #Get the answer
+                    values[unknown2] = None
+                equation =  {'type': 'triangle', 'answer': answer, 'values': values}
+            elif shape == 2: #Circle
+                r = random.randint(1, 5)
+                A = round(math.pi * (r**2))
+                decision = random.randint(1, 2) #Decide if we will give them the radius or the area
+                if decision == 1: answer, r = r, "r" #Give them the area
+                else: answer, A = A, "A" #Give them the radius
+                equation = {'type': 'circle', 'A': A, 'r': r, 'answer': answer}
 
     return equation
