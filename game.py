@@ -17,7 +17,7 @@ class Barrel(pygame.sprite.Sprite):
             self.barrels.append(self.barrel)
         self.image = self.barrels[0].copy()
         self.rect = self.image.get_rect() #Get the rectangle.
-        self.rect.bottomright = (0, 800) #Move the rectangle to the proper locations.
+        self.rect.bottomright = (0, round(800 * resolution)) #Move the rectangle to the proper locations.
         self.instance = 36
         #Text now
         self.font = pygame.font.SysFont("timesnewroman", 17) #Get the font ready
@@ -113,7 +113,7 @@ class Barrel(pygame.sprite.Sprite):
         self.image = self.barrels[0].copy()
         self.correct, self.passed = False, None
         self.instance = 36
-        self.rect.bottomright = (0, 800)
+        self.rect.bottomright = (0, round(800 * resolution))
 
 class Player(pygame.sprite.Sprite): #Make a class for the player
     def __init__(self, version):
@@ -129,7 +129,7 @@ class Player(pygame.sprite.Sprite): #Make a class for the player
         #self.bottom = pygame.draw.rect(self.image, (255, 255, 255), (self.rect.centerx -50, self.rect.h//2 -50, 100, 100))
         #self.body = pygame.draw.circle(self.image, (255, 255, 255), (self.rect.centerx, self.rect.h//6 * 5), 50)
         #self.head = pygame.draw.polygon(self.image, (255, 255, 255), [(self.rect.w//4, 0), (self.rect.w//4 *3, 0), (self.rect.w ,self.rect.h//6), (self.rect.w//4 *3, self.rect.h//3), (self.rect.w//4, self.rect.h//3), (0, self.rect.h//6)])
-        self.rect.bottomright = (1200, 800) #Reposition at 1200, 800
+        self.rect.bottomright = (round(1200 * resolution), round(800 * resolution)) #Reposition at 1200, 800
         self.originalRect = self.rect.copy() #Make this for referencing original position.
         self.timeReg, self.initVel = 0, (9.81 * math.sqrt(120/49))/1000 #Used for the jumping later.
     def jump(self):
@@ -148,7 +148,7 @@ class Player(pygame.sprite.Sprite): #Make a class for the player
             return False #Stop Jumping!
         return True
     def hit(self):
-        self.rect.right = 1200 #Move to edge of the right of the screen.
+        self.rect.right = round(1200 * resolution) #Move to edge of the right of the screen.
     def move(self, direction, minimumPos):
         if direction == "r": 
             if self.rect.right + 7 > 1200: self.rect.move_ip(1200 - self.rect.right, 0)
@@ -187,7 +187,7 @@ class scoreDisplay(pygame.sprite.Sprite): #Make a class for the display of the s
         self.imageSafe.fill((222, 184, 135))
         self.box = pygame.draw.rect(self.imageSafe, (245, 222, 179), (self.imageSafe.get_rect().centerx - 40, self.imageSafe.get_rect().centery - 25, 80, 50))
         self.rect = self.imageSafe.get_rect()
-        self.rect.move_ip(50, 100) #Move
+        self.rect.move_ip(round(50 * resolution), round(100 * resolution)) #Move
         self.image = self.imageSafe.copy() #So that we can blit the text onto the new image without affecting the old one.
         #Text now
         self.font = pygame.font.SysFont("freestylescript", 45)
@@ -206,7 +206,7 @@ class Menu(pygame.sprite.Sprite): #Make a menubutton class
         super().__init__()
         self.image = pygame.Surface((400, 100))
         self.rect = self.image.get_rect()
-        self.rect.center = (600, 400) #Position it at the centre of the screen.
+        self.rect.center = (round(600 * resolution), round(400 * resolution)) #Position it at the centre of the screen.
         self.image.fill((102, 51, 0))
 
         self.font = pygame.font.SysFont("timesnewroman", 45)
@@ -283,8 +283,15 @@ def questionAnalyzer(difficulty): #Make a function that will generate the barrel
         return (text, answer, question['type'])
     return (text, answer, None)
 def main(difficulty, user): #User is the user's information
+    global resolution
+    try:
+        resolution = user["resolution"]
+        resolution = resolution / 100
+    except Exception:
+        resolution = 1.0
+
     pygame.init()
-    screen = pygame.display.set_mode((1200, 800))
+    screen = pygame.display.set_mode((round(1200 * resolution), round(800 * resolution)))
     pygame.display.set_caption("Ape Over Math - In Game")
     pygame.mixer.init()
     musicList = user['gameMusic']
@@ -293,7 +300,7 @@ def main(difficulty, user): #User is the user's information
     pygame.key.set_repeat(150, 5) #If the user holds the key down, keep doing the action
     if user['background'] != "": backgroundJungle = pygame.image.load(user['background']) #Import the image selected by the player.
     else: backgroundJungle = pygame.image.load("jungleHD.png")
-    backgroundJungle = pygame.transform.scale(backgroundJungle, (1200, 800))
+    backgroundJungle = pygame.transform.scale(backgroundJungle, (round(1200 * resolution), round(800 * resolution)))
     backgroundJungle = backgroundJungle.convert()
     screen.blit(backgroundJungle, (0,0))
     succession, score = 20.0, 0  #Variable define: This variable will control the rate at which barrels hurtle at the player. Score is the player's score.
@@ -375,7 +382,7 @@ def main(difficulty, user): #User is the user's information
                         object.passed = True
                         answerChances = 2 #Reset this variable so the player can answer the questions again in the future.
                         score += 5
-                    if object.rect.left >= 1200: 
+                    if object.rect.left >= round(1200 * resolution): 
                         objects.remove(object) #If the barrel runs off screen, remove it from the group of onscreen stuff.
                         object.reset(difficulty)
                         barrels.update(object)
@@ -395,7 +402,7 @@ def main(difficulty, user): #User is the user's information
                     posList.append(object.rect.x) #Append the x coordinate.
                     answerList.append(object.answer) #Also append the answer to the question
             if len(barrelOptions) > 0:
-                if len(posList) > 1: furthestRight = max(posList) + 120 #Prevent the player from going too close to the next barrel.
+                if len(posList) > 1: furthestRight = max(posList) + round(120 * resolution) #Prevent the player from going too close to the next barrel.
                 answerPos = posList.index(max(posList))
                 answer = answerList[answerPos]
                 barrelToAnswer = barrelOptions[answerPos] #Need this in case the user get the answer right.

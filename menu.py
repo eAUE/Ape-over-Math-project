@@ -199,8 +199,8 @@ class main():
     def goToD(self, userNo, infoGather = None): #Function will prepare for going to the dashboard
         if infoGather != None:
             self.name = self.nameBox.get()
-            if len(self.name) > 7 or len(self.name) < 2:
-                MessageBox.showerror("Invalid Length", "Your gamertag must be between 2 and 7 characters.")
+            if len(self.name) > 12 or len(self.name) < 2:
+                MessageBox.showerror("Invalid Length", "Your gamertag must be between 2 and 12 characters.")
                 return
             self.user = {'background': "", 'gamertag': self.nameBox.get(), 'user':userNo, 'score': {'score': [], 'difficulty': [], 'timeStamp': []}, 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
             infoGather.destroy()
@@ -379,6 +379,7 @@ class main():
         self.KButton = tkinter.Button(self.Settings, text = "Save", command = lambda: self.settingUpdate(self.difficultySet.get()), font = self.settingsFont)
         self.cancelButton = tkinter.Button(self.Settings, text = "Discard", command = lambda: self.settingUpdate(self.oldUser, 1), font = self.settingsFont)
         self.eraseAllButton = tkinter.Button(self.Settings, text = "Reset Application", command = self.eraseAllSetup, font = self.settingsFont)
+        self.resolutionButton = tkinter.Button(self.Settings, text = "Select Resolution", command = self.resolutionChange, font = self.settingsFont)
         
 
         self.importMenu = tkinter.Menubutton(self.Settings, text = "Import...", relief = tkinter.RAISED, font = self.settingsFont)
@@ -397,9 +398,19 @@ class main():
         self.KButton.grid(column = 1, row = 8)
         self.deleteButton.grid(column = 1, row = 0)
         self.eraseAllButton.grid(column = 2, row = 0)
+        self.resolutionButton.grid(column = 0, row = 5)
 
         self.organiser.add(self.Settings)
         self.organiser.tab(2, text = "Settings")
+         
+    def resolutionChange(self) :
+        try: 
+            resolution = int(input("Input your resolution as an integer out of 100%"))
+        except ValueError :
+            MessageBox.showerror("Invalid Input", "Not a valid integer input.")
+            return
+        self.user["resolution"] = resolution
+
     def museCheckboxer(self, id = 0, newFile = None): #Make a function that will both generate and update the music selection checkboxes in the settings tab. Id 0 for first time generation
         if id == 0: #Make the entire thing new
             self.museSelectButton = tkinter.Menubutton(self.Settings, text = "Music Selection", relief = tkinter.RAISED, font = self.settingsFont)
