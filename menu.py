@@ -404,10 +404,16 @@ class main():
         self.organiser.tab(2, text = "Settings")
          
     def resolutionChange(self) :
+        if not (MessageBox.askyesno("Are you sure?", "Be wary of changing the resolution! It slightly impacts difficulty of the game!")):
+            return
+        MessageBox.showinfo("Note", "Go to the command line to input the resolution.")
         try: 
-            resolution = int(input("Input your resolution as an integer out of 100%"))
+            resolution = int(input("Input your resolution as an integer out of 100%.\nMust be between 75 and 150.\n-->"))
         except ValueError :
             MessageBox.showerror("Invalid Input", "Not a valid integer input.")
+            return
+        if resolution < 75 or resolution > 150:
+            MessageBox.showerror("Invalid input", "Must be between 75 and 100. You inputted " + str(resolution))
             return
         self.user["resolution"] = resolution
 
