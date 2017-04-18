@@ -199,8 +199,8 @@ class main():
     def goToD(self, userNo, infoGather = None): #Function will prepare for going to the dashboard
         if infoGather != None:
             self.name = self.nameBox.get()
-            if len(self.name) > 7 or len(self.name) < 2:
-                MessageBox.showerror("Invalid Length", "Your gamertag must be between 2 and 7 characters.")
+            if len(self.name) > 12 or len(self.name) < 2:
+                MessageBox.showerror("Invalid Length", "Your gamertag must be between 2 and 12 characters.")
                 return
             self.user = {'background': "", 'gamertag': self.nameBox.get(), 'user':userNo, 'score': {'score': [], 'difficulty': [], 'timeStamp': []}, 'character': 'elf.png', 'characters': ['elf.png', 'darkElf.png', 'coolElf.png', 'jackElf.png', 'purpleElf.png', 'summerElf.png'],'creationD': time.strftime("%Y - %m - %d %H:%M, %u"), 'difficulty': 1, 'gameMusic': ["Arc - Mind Vortex.wav", "Be Electric.wav", "Burning.wav", "Etude.wav", "Lightbringer - Far Too Loud.wav", "Rocksteady.wav", "Windwaker.wav"]}
             infoGather.destroy()
