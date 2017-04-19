@@ -298,7 +298,7 @@ def main(difficulty, user): #User is the user's information
     musicSelection = pygame.mixer.Sound("Music/In Game/" + musicList[random.randint(0, len(musicList) - 1)]) #Get a random music file to play
     musicSelection.play(-1)
     pygame.key.set_repeat(150, 5) #If the user holds the key down, keep doing the action
-    if user['background'] != "": backgroundJungle = pygame.image.load(user['background']) #Import the image selected by the player.
+    if user['background'] != "": backgroundJungle = pygame.image.load("Player Background/" + user['background']) #Import the image selected by the player.
     else: backgroundJungle = pygame.image.load("jungleHD.png")
     backgroundJungle = pygame.transform.scale(backgroundJungle, (round(1200 * resolution), round(800 * resolution)))
     backgroundJungle = backgroundJungle.convert()
