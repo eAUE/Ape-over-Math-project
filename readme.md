@@ -9,11 +9,12 @@ Start the `menu.py` file in the project root.
 
 ## Music Attribution
 ### Menu Music
-Adele - Skyfall
-Pharrel Williams - Happy
-The Chainsmokers - Don't let me down
-Pilot - Magic
-Rick Astley - Never Gonna Give You Up
+| Song                    | Artist           |
+|-------------------------|------------------|
+| Skyfall                 | Adele            |
+| Happy                   | Pharrel Williams |
+| Magic                   | Pilot            |
+| Never Gonna Give You Up | Rick Astley      |
 
 ### In Game
 All of the music is from Ashphalt 8 Airborne soundtrack.
