@@ -38,7 +38,7 @@ class musicer():
         self.count += 1
         self.backgroundMusic.play(self.queue[self.count % self.length], 0)
     def stop(self, screen):
-        screen.after_cancel(0)
+        # screen.after_cancel(0)
         self.backgroundMusic.stop()
         pygame.mixer.quit()
         pygame.quit()
