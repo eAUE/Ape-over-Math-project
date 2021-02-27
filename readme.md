@@ -21,3 +21,9 @@ All of the music is from Ashphalt 8 Airborne soundtrack.
 
 ## About
 This game was created as my final project for a High School programming course, and was my first larger-scale programming project, as is shown by the lack of good code style.
+
+# Screenshots
+![User Selection](./res/user_selection.png)
+![In Game](./res/game.png)
+![Game Settings](./res/settings.png)
+![Game Scores](./res/scores.png)
